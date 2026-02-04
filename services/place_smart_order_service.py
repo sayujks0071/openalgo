@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional, Tuple
 from database.analyzer_db import async_log_analyzer
 from database.apilog_db import async_log_order, executor
 from database.auth_db import get_auth_token_broker
+from database.master_contract_status_db import check_if_ready
 from database.settings_db import get_analyze_mode
 from extensions import socketio
 from services.telegram_alert_service import telegram_alert_service
@@ -195,6 +196,14 @@ def place_smart_order_with_auth(
         return success, response_data, status_code
 
     # Live Mode - Proceed with actual order placement
+    if not check_if_ready(broker):
+        error_response = {
+            "status": "error",
+            "message": f"Master contracts not ready for broker: {broker}. Please wait for download.",
+        }
+        executor.submit(async_log_order, "placesmartorder", original_data, error_response)
+        return False, error_response, 503
+
     broker_module = import_broker_module(broker)
     if broker_module is None:
         error_response = {"status": "error", "message": "Broker-specific module not found"}

@@ -19,10 +19,121 @@ from utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+VALID_PRICE_TYPES = {"MARKET", "LIMIT", "SL", "SL-M"}
+VALID_PRODUCTS = {"MIS", "NRML", "CNC"}
+VALID_ACTIONS = {"BUY", "SELL"}
+
+
+def _build_error_response(error_code: str, message: str):
+    class MockResponse:
+        status_code = 400
+        status = 400
+
+    return (
+        MockResponse(),
+        {
+            "errorType": "Input_Exception",
+            "errorCode": error_code,
+            "errorMessage": message,
+        },
+        None,
+    )
+
+
+def _extract_client_id():
+    broker_api_key = os.getenv("BROKER_API_KEY")
+    if not broker_api_key:
+        return None
+    if ":::" in broker_api_key:
+        return broker_api_key.split(":::")[0]
+    return broker_api_key
+
+
+def _validate_order_payload(data):
+    missing = [
+        k for k in ("symbol", "exchange", "action", "quantity", "product") if not data.get(k)
+    ]
+    if missing:
+        return _build_error_response(
+            "OA-MISSING-FIELDS", f"Missing required fields: {', '.join(missing)}"
+        )
+
+    action = str(data.get("action", "")).upper()
+    if action not in VALID_ACTIONS:
+        return _build_error_response("OA-ACTION-INVALID", f"Invalid action: {data.get('action')}")
+    data["action"] = action
+
+    pricetype = str(data.get("pricetype", "MARKET")).upper()
+    if pricetype not in VALID_PRICE_TYPES:
+        return _build_error_response(
+            "OA-PRICETYPE-INVALID", f"Invalid pricetype: {data.get('pricetype')}"
+        )
+    data["pricetype"] = pricetype
+
+    product = str(data.get("product", "")).upper()
+    if product and product not in VALID_PRODUCTS:
+        return _build_error_response(
+            "OA-PRODUCT-INVALID", f"Invalid product: {data.get('product')}"
+        )
+    data["product"] = product
+
+    try:
+        quantity = int(data.get("quantity", 0))
+    except Exception:
+        quantity = 0
+    if quantity <= 0:
+        return _build_error_response("OA-QUANTITY-INVALID", "Quantity must be > 0")
+    data["quantity"] = str(quantity)
+
+    # Price validation
+    if pricetype in {"LIMIT", "SL"}:
+        price = float(data.get("price", 0) or 0)
+        if price <= 0:
+            return _build_error_response("OA-PRICE-MISSING", f"{pricetype} orders require price")
+    if pricetype in {"SL", "SL-M"}:
+        trigger_price = float(data.get("trigger_price", 0) or 0)
+        if trigger_price <= 0:
+            return _build_error_response(
+                "OA-TRIGGER-MISSING", f"{pricetype} orders require trigger_price"
+            )
+
+    return None
+
+
+def _validate_modify_payload(data):
+    if not data.get("orderid"):
+        return _build_error_response("OA-ORDERID-MISSING", "Missing orderid for modification")
+
+    # Transform function requires these fields, so we must validate them
+    required_fields = ["quantity", "price", "pricetype"]
+    missing = [k for k in required_fields if k not in data]
+    if missing:
+        return _build_error_response(
+            "OA-MISSING-FIELDS", f"Missing fields for modification: {', '.join(missing)}"
+        )
+
+    # Validate Quantity
+    try:
+        qty = int(data.get("quantity", 0))
+    except Exception:
+        qty = 0
+    if qty <= 0:
+        return _build_error_response("OA-QUANTITY-INVALID", "Quantity must be > 0 and integer")
+    data["quantity"] = str(qty)
+
+    # Validate Price
+    try:
+        price = float(data.get("price", 0))
+    except Exception:
+        return _build_error_response("OA-PRICE-INVALID", "Invalid price format")
+    if price < 0:
+        return _build_error_response("OA-PRICE-INVALID", "Price cannot be negative")
+
+    return None
+
 
 def get_api_response(endpoint, auth, method="GET", payload=""):
     AUTH_TOKEN = auth
-    api_key = os.getenv("BROKER_API_KEY")
 
     # Get the shared httpx client with connection pooling
     client = get_httpx_client()
@@ -126,9 +237,45 @@ def get_open_position(tradingsymbol, exchange, product, auth):
 
 def place_order_api(data, auth):
     AUTH_TOKEN = auth
-    BROKER_API_KEY = os.getenv("BROKER_API_KEY")
-    data["apikey"] = BROKER_API_KEY
+    # Normalize price type field name if needed
+    if "pricetype" not in data and "price_type" in data:
+        data["pricetype"] = data["price_type"]
+
+    # Dhan requires client ID for dhanClientId
+    client_id = _extract_client_id()
+    if not client_id:
+        logger.error("BROKER_API_KEY missing; cannot determine Dhan client ID")
+        return _build_error_response(
+            "OA-CLIENTID-MISSING", "Missing Dhan client ID (BROKER_API_KEY not set)."
+        )
+
+    data["apikey"] = client_id
+
+    validation_error = _validate_order_payload(data)
+    if validation_error:
+        return validation_error
+
+    # Validate exchange mapping early to avoid DH-905
+    exchange_segment = map_exchange_type(data["exchange"])
+    if not exchange_segment:
+        logger.error(f"Unsupported exchange for Dhan Sandbox: {data.get('exchange')}")
+        return _build_error_response(
+            "OA-EXCHANGE-INVALID",
+            f"Unsupported exchange for Dhan Sandbox: {data.get('exchange')}",
+        )
+
     token = get_token(data["symbol"], data["exchange"])
+    if not token:
+        logger.error(
+            f"Missing securityId/token for {data.get('symbol')} {data.get('exchange')}. "
+            "Master contracts may not be ready or symbol is invalid."
+        )
+        return _build_error_response(
+            "OA-SECURITYID-MISSING",
+            "Missing securityId for symbol/exchange. "
+            "Master contracts not ready or symbol not found.",
+        )
+
     newdata = transform_data(data, token)
     headers = {
         "access-token": AUTH_TOKEN,
@@ -170,7 +317,6 @@ def place_order_api(data, auth):
 
 def place_smartorder_api(data, auth):
     AUTH_TOKEN = auth
-    BROKER_API_KEY = os.getenv("BROKER_API_KEY")
     # If no API call is made in this function then res will return None
     res = None
 
@@ -296,6 +442,15 @@ def close_all_positions(current_api_key, auth):
 
 
 def cancel_order(orderid, auth):
+    # Validate orderid
+    if not orderid:
+        logger.error("Cancel order failed: Missing orderid")
+        return {
+            "status": "error",
+            "message": "Missing orderid",
+            "errorCode": "OA-ORDERID-MISSING",
+        }, 400
+
     # Assuming you have a function to get the authentication token
     AUTH_TOKEN = auth
 
@@ -336,8 +491,22 @@ def cancel_order(orderid, auth):
 def modify_order(data, auth):
     # Assuming you have a function to get the authentication token
     AUTH_TOKEN = auth
-    BROKER_API_KEY = os.getenv("BROKER_API_KEY")
-    data["apikey"] = BROKER_API_KEY
+
+    # Dhan requires client ID for dhanClientId
+    client_id = _extract_client_id()
+    if not client_id:
+        logger.error("BROKER_API_KEY missing; cannot determine Dhan client ID")
+        return _build_error_response(
+            "OA-CLIENTID-MISSING", "Missing Dhan client ID (BROKER_API_KEY not set)."
+        )
+    data["apikey"] = client_id
+
+    # Validate payload
+    validation_error = _validate_modify_payload(data)
+    if validation_error:
+        # _build_error_response returns (res, dict, orderid), but modify_order expects (dict, status)
+        _, err_dict, _ = validation_error
+        return err_dict, 400
 
     orderid = data["orderid"]
     transformed_order_data = transform_modify_order_data(
