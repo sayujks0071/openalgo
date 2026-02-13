@@ -210,8 +210,11 @@ def load_and_check_env_variables():
         print("\nSolution: Copy .sample.env to .env and configure your settings")
         sys.exit(1)
 
-    # Load environment variables from the .env file with override=True to ensure values are updated
-    load_dotenv(dotenv_path=env_path, override=True)
+    # Load environment variables from the .env file.
+    # By default, do NOT override already-set env vars so deployments and CLI
+    # overrides (e.g., FLASK_PORT) work as expected.
+    dotenv_override = os.getenv("OPENALGO_DOTENV_OVERRIDE", "").lower() in ("1", "true", "yes")
+    load_dotenv(dotenv_path=env_path, override=dotenv_override)
 
     # Define the required environment variables
     required_vars = [
@@ -299,17 +302,19 @@ def load_and_check_env_variables():
             sys.exit(1)
 
     # Validate dhan API key format
-    elif broker_name == "dhan":
-        if ":::" not in broker_api_key or broker_api_key.count(":::") != 1:
-            print("\nError: Invalid Dhan API key format detected!")
-            print("The BROKER_API_KEY for Dhan must be in the format:")
-            print("  BROKER_API_KEY = 'client_id:::api_key'")
-            print("\nExample:")
-            print("  BROKER_API_KEY = '1234567890:::your_dhan_apikey'")
-            print("  BROKER_API_SECRET = 'your_dhan_apisecret'")
-            print("\nFor detailed instructions, please refer to:")
-            print("  https://docs.openalgo.in/connect-brokers/brokers/dhan")
-            sys.exit(1)
+    # NOTE: Temporarily disabled to allow OAuth flow to work
+    # The OAuth flow will handle credential validation
+    # elif broker_name == "dhan":
+    #     if ":::" not in broker_api_key or broker_api_key.count(":::") != 1:
+    #         print("\nError: Invalid Dhan API key format detected!")
+    #         print("The BROKER_API_KEY for Dhan must be in the format:")
+    #         print("  BROKER_API_KEY = 'client_id:::api_key'")
+    #         print("\nExample:")
+    #         print("  BROKER_API_KEY = '1234567890:::your_dhan_apikey'")
+    #         print("  BROKER_API_SECRET = 'your_dhan_apisecret'")
+    #         print("\nFor detailed instructions, please refer to:")
+    #         print("  https://docs.openalgo.in/connect-brokers/brokers/dhan")
+    #         sys.exit(1)
 
     # Validate environment variable values
     flask_debug = os.getenv("FLASK_DEBUG", "").lower()

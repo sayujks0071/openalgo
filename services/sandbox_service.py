@@ -518,6 +518,8 @@ def sandbox_place_smart_order(
                 quantity = abs(quantity_diff)
 
         # Place the order to reach target position
+        price_type = order_data.get("price_type") or order_data.get("pricetype") or "MARKET"
+
         sandbox_order_data = {
             "symbol": symbol,
             "exchange": exchange,
@@ -525,7 +527,7 @@ def sandbox_place_smart_order(
             "quantity": quantity,
             "price": order_data.get("price", 0),
             "trigger_price": order_data.get("trigger_price", 0),
-            "price_type": order_data.get("price_type", "MARKET"),
+            "price_type": price_type,
             "product": product,
             "strategy": order_data.get("strategy", ""),
         }

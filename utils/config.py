@@ -4,8 +4,11 @@ import os
 
 from dotenv import load_dotenv
 
-# Load environment variables from .env file with override=True to ensure values are updated
-load_dotenv(override=True)
+# Load environment variables from .env file.
+# By default, do NOT override already-set environment variables so that
+# deployments (Docker/Railway/systemd) and CLI overrides work as expected.
+dotenv_override = os.getenv("OPENALGO_DOTENV_OVERRIDE", "").lower() in ("1", "true", "yes")
+load_dotenv(override=dotenv_override)
 
 
 def get_broker_api_key():

@@ -11,6 +11,7 @@ import logging
 import os
 import platform
 import queue
+import shlex
 import signal
 import subprocess
 import sys
@@ -124,6 +125,79 @@ def init_scheduler():
         logger.debug("Market hours enforcer scheduled (runs every minute)")
 
 
+def register_schedule_jobs_from_config() -> None:
+    """
+    Recreate APScheduler jobs for all strategies marked as scheduled.
+
+    APScheduler jobs are in-memory only; on app restart they are lost. Restoring
+    them here prevents scheduled strategies from silently never starting until a
+    user visits `/python/*` in the UI.
+    """
+    if SCHEDULER is None:
+        return
+
+    for strategy_id, cfg in list(STRATEGY_CONFIGS.items()):
+        if not isinstance(cfg, dict) or not cfg.get("is_scheduled"):
+            continue
+
+        start_time = cfg.get("schedule_start")
+        stop_time = cfg.get("schedule_stop")
+        days = cfg.get("schedule_days") or ["mon", "tue", "wed", "thu", "fri"]
+        if not start_time:
+            continue
+
+        valid_days = {"mon", "tue", "wed", "thu", "fri", "sat", "sun"}
+        days_lower = [str(d).lower() for d in days]
+        if any(d not in valid_days for d in days_lower):
+            logger.warning(f"Skipping schedule restore for {strategy_id}: invalid days={days}")
+            continue
+
+        start_job_id = f"start_{strategy_id}"
+        stop_job_id = f"stop_{strategy_id}"
+
+        try:
+            if SCHEDULER.get_job(start_job_id):
+                SCHEDULER.remove_job(start_job_id)
+            if SCHEDULER.get_job(stop_job_id):
+                SCHEDULER.remove_job(stop_job_id)
+        except Exception:
+            pass
+
+        try:
+            hour, minute = map(int, str(start_time).split(":"))
+            SCHEDULER.add_job(
+                func=lambda sid=strategy_id: scheduled_start_strategy(sid),
+                trigger=CronTrigger(
+                    hour=hour,
+                    minute=minute,
+                    day_of_week=",".join(days_lower),
+                    timezone=IST,
+                ),
+                id=start_job_id,
+                replace_existing=True,
+            )
+        except Exception as e:
+            logger.exception(f"Failed restoring start job for {strategy_id}: {e}")
+            continue
+
+        if stop_time:
+            try:
+                hour, minute = map(int, str(stop_time).split(":"))
+                SCHEDULER.add_job(
+                    func=lambda sid=strategy_id: scheduled_stop_strategy(sid),
+                    trigger=CronTrigger(
+                        hour=hour,
+                        minute=minute,
+                        day_of_week=",".join(days_lower),
+                        timezone=IST,
+                    ),
+                    id=stop_job_id,
+                    replace_existing=True,
+                )
+            except Exception as e:
+                logger.exception(f"Failed restoring stop job for {strategy_id}: {e}")
+
+
 def load_configs():
     """Load strategy configurations from file"""
     global STRATEGY_CONFIGS
@@ -228,8 +302,13 @@ def get_active_broker():
 def check_master_contract_ready(skip_on_startup=False):
     """Check if master contracts are ready for the current broker"""
     try:
-        # First try to get broker from session (if available)
-        broker = session.get("broker") if session else None
+        # First try to get broker from session (if request context is available).
+        # APScheduler/background tasks may call this without a request context.
+        broker = None
+        try:
+            broker = session.get("broker") if session else None
+        except RuntimeError:
+            broker = None
 
         # If no session broker, try to get from database (for app restart scenarios)
         if not broker:
@@ -456,10 +535,63 @@ def start_strategy_process(strategy_id):
             subprocess_args["stdout"] = log_handle
             subprocess_args["stderr"] = subprocess.STDOUT
             subprocess_args["cwd"] = str(Path.cwd())
+            subprocess_env = os.environ.copy()
+
+            # Ensure strategy subprocesses call back into the correct OpenAlgo instance.
+            # Without this, scripts default to http://127.0.0.1:5000 and may accidentally
+            # hit a different local OpenAlgo instance running on another port.
+            if not subprocess_env.get("OPENALGO_HOST"):
+                host_server = os.getenv("HOST_SERVER", "").strip().strip("'\"")
+                if host_server:
+                    subprocess_env["OPENALGO_HOST"] = host_server
+                else:
+                    host_ip = os.getenv("FLASK_HOST_IP", "127.0.0.1").strip().strip("'\"")
+                    port = os.getenv("FLASK_PORT", "5000").strip().strip("'\"")
+                    subprocess_env["OPENALGO_HOST"] = f"http://{host_ip}:{port}"
+
+            # Auto-inject API key for scripts that read OPENALGO_APIKEY.
+            # This keeps credentials out of CLI args and avoids hardcoding in strategy files.
+            if not (subprocess_env.get("OPENALGO_APIKEY") or subprocess_env.get("OPENALGO_API_KEY")):
+                try:
+                    from database.auth_db import get_api_key_for_tradingview, get_first_available_api_key
+
+                    user_id = config.get("user_id")
+                    runtime_api_key = None
+                    if user_id:
+                        runtime_api_key = get_api_key_for_tradingview(user_id)
+                    if not runtime_api_key:
+                        # Fallback for single-user/local setups where strategy ownership/user_id
+                        # may not match the only stored API key.
+                        runtime_api_key = get_first_available_api_key()
+                    if runtime_api_key:
+                        subprocess_env["OPENALGO_APIKEY"] = runtime_api_key
+                        subprocess_env["OPENALGO_API_KEY"] = runtime_api_key
+                except Exception as e:
+                    logger.warning(f"Could not inject OPENALGO_APIKEY for {strategy_id}: {e}")
+
+            # Optional per-strategy environment variables (e.g., risk guardrails).
+            strategy_env = config.get("env", {})
+            if isinstance(strategy_env, dict):
+                for key, value in strategy_env.items():
+                    if key:
+                        subprocess_env[str(key)] = str(value)
+            subprocess_args["env"] = subprocess_env
 
             # Start the process
             # Use Python unbuffered mode for real-time output
             cmd = [get_python_executable(), "-u", str(file_path.absolute())]
+
+            # Optional per-strategy CLI args from config.
+            # Supports list format (recommended) and shell-style string for backward compatibility.
+            config_args = config.get("script_args", [])
+            if isinstance(config_args, str):
+                try:
+                    config_args = shlex.split(config_args)
+                except Exception as e:
+                    logger.warning(f"Failed to parse script_args for {strategy_id}: {e}")
+                    config_args = []
+            if isinstance(config_args, list) and config_args:
+                cmd.extend([str(arg) for arg in config_args])
 
             # Log the command being executed for debugging
             logger.info(f"Executing command: {' '.join(cmd)}")
@@ -1073,12 +1205,20 @@ def market_hours_enforcer():
 
         today_is_trading_day = is_trading_day()
 
-        # If it's a trading day, clear paused reasons and START strategies that were blocked
+        # If it's a trading day, clear paused reasons and (re)start scheduled strategies
+        # that should be running now (covers app restarts and missed cron triggers).
         if today_is_trading_day:
             started_count = 0
             cleared_any = False
 
             for strategy_id, config in list(STRATEGY_CONFIGS.items()):
+                if not config.get("is_scheduled"):
+                    continue
+
+                # Respect manual stop indefinitely until user starts again.
+                if config.get("manually_stopped"):
+                    continue
+
                 paused_reason = config.get("paused_reason")
 
                 # If strategy was paused due to weekend/holiday, try to start it
@@ -1100,6 +1240,20 @@ def market_hours_enforcer():
                                 started_count += 1
                             else:
                                 logger.warning(f"Failed to start {strategy_id}: {message}")
+                else:
+                    # Not paused: ensure it's running during its active window.
+                    is_running = strategy_id in RUNNING_STRATEGIES
+                    if not is_running and config.get("pid"):
+                        is_running = check_process_status(config.get("pid"))
+                    if not is_running and is_within_schedule_time(strategy_id):
+                        logger.info(
+                            f"Trading day enforcer: Starting missing scheduled strategy {strategy_id}"
+                        )
+                        success, message = start_strategy_process(strategy_id)
+                        if success:
+                            started_count += 1
+                        else:
+                            logger.warning(f"Failed to start {strategy_id}: {message}")
 
                 # Clear paused reasons (it's a trading day now)
                 if "paused_reason" in config:
@@ -2655,6 +2809,7 @@ def restore_strategies_after_login():
 ensure_directories()
 load_configs()
 init_scheduler()
+register_schedule_jobs_from_config()
 
 # Flag to track if full initialization has been done
 _initialized = False

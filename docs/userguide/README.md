@@ -55,6 +55,9 @@ This guide takes you from zero to automated trading, covering everything from ba
 - [29 - Troubleshooting](./29-troubleshooting/README.md)
 - [30 - FAQs](./30-faqs/README.md)
 
+### Specialist Playbooks (Modules 31+)
+- [31 - FastScalper NIFTY & BANKNIFTY Options – Intraday Scalping Playbook](./31-fastscalper-nifty-banknifty-options/README.md)
+
 ## Quick Navigation
 
 | I want to... | Go to |

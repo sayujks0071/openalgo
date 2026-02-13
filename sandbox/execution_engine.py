@@ -236,12 +236,23 @@ class ExecutionEngine:
             ask = Decimal(str(quote.get("ask", 0)))
 
             if ltp <= 0:
-                logger.warning(f"Invalid LTP for order {order.orderid}: {ltp}")
-                return
+                if (
+                    os.getenv("IGNORE_MARKET_HOURS", "").lower() in ("1", "true", "yes")
+                    and order.price_type == "LIMIT"
+                    and order.price
+                    and order.price > 0
+                ):
+                    # Sandbox fallback: execute limit orders at their limit price
+                    should_execute = True
+                    execution_price = order.price
+                else:
+                    logger.warning(f"Invalid LTP for order {order.orderid}: {ltp}")
+                    return
 
             # Determine if order should be executed based on price type
-            should_execute = False
-            execution_price = None
+            if "should_execute" not in locals():
+                should_execute = False
+                execution_price = None
 
             if order.price_type == "MARKET":
                 # Market orders execute immediately at bid/ask (more realistic)

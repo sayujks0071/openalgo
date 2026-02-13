@@ -121,7 +121,7 @@ class OrderManager:
 
             # Validate MIS orders - reject if after square-off time but before market open
             # Exception: Allow orders that reduce/close existing positions
-            if product == "MIS":
+            if product == "MIS" and os.getenv("IGNORE_MARKET_HOURS", "").lower() not in ("1", "true", "yes"):
                 from datetime import time as dt_time
 
                 from sandbox.squareoff_manager import SquareOffManager
@@ -535,6 +535,23 @@ class OrderManager:
                 except Exception as e:
                     logger.exception(f"Error executing market order immediately: {e}")
                     # Order remains in 'open' status if execution fails
+
+            # Sandbox-only: execute LIMIT orders immediately when market hours are ignored
+            if (
+                price_type == "LIMIT"
+                and os.getenv("IGNORE_MARKET_HOURS", "").lower() in ("1", "true", "yes")
+                and price
+                and price > 0
+            ):
+                try:
+                    from sandbox.execution_engine import ExecutionEngine
+
+                    engine = ExecutionEngine()
+                    immediate_quote = {"ltp": float(price), "bid": float(price), "ask": float(price)}
+                    engine._process_order(order, immediate_quote)
+                    logger.info(f"Limit order {orderid} executed immediately (sandbox override)")
+                except Exception as e:
+                    logger.exception(f"Error executing limit order immediately: {e}")
 
             return True, {"status": "success", "orderid": orderid, "mode": "analyze"}, 200
 
@@ -984,7 +1001,7 @@ class OrderManager:
                 return False, "Invalid trigger_price"
 
         # Validate exchange
-        valid_exchanges = ["NSE", "BSE", "NFO", "BFO", "CDS", "BCD", "MCX", "NCDEX"]
+        valid_exchanges = ["NSE", "BSE", "NFO", "BFO", "CDS", "BCD", "MCX", "NCDEX", "NSE_INDEX", "BSE_INDEX"]
         if order_data["exchange"].upper() not in valid_exchanges:
             return False, f"Invalid exchange. Must be one of {', '.join(valid_exchanges)}"
 

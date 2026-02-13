@@ -404,7 +404,7 @@ class BrokerData:
                             "low": float(lows[i]) if lows[i] else 0,
                             "close": float(closes[i]) if closes[i] else 0,
                             "volume": int(float(volumes[i])) if volumes[i] else 0,
-                            "oi": int(float(openinterest[i])) if openinterest[i] else 0,
+                            "oi": int(float(openinterest[i])) if i < len(openinterest) and openinterest[i] else 0,
                         }
                     )
             else:
@@ -460,7 +460,7 @@ class BrokerData:
                                     "low": float(lows[i]) if lows[i] else 0,
                                     "close": float(closes[i]) if closes[i] else 0,
                                     "volume": int(float(volumes[i])) if volumes[i] else 0,
-                                    "oi": int(float(openinterest[i])) if openinterest[i] else 0,
+                                    "oi": int(float(openinterest[i])) if i < len(openinterest) and openinterest[i] else 0,
                                 }
                             )
                     except Exception as e:
@@ -517,7 +517,7 @@ class BrokerData:
                                         "low": float(lows[i]) if lows[i] else 0,
                                         "close": float(closes[i]) if closes[i] else 0,
                                         "volume": int(float(volumes[i])) if volumes[i] else 0,
-                                        "oi": int(float(openinterest[i])) if openinterest[i] else 0,
+                                        "oi": int(float(openinterest[i])) if i < len(openinterest) and openinterest[i] else 0,
                                     }
                                 )
                         except Exception as e:

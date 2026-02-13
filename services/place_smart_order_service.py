@@ -96,7 +96,8 @@ def validate_smart_order(order_data: dict[str, Any]) -> tuple[bool, str | None]:
 
     # Validate exchange
     if "exchange" in order_data and order_data["exchange"] not in VALID_EXCHANGES:
-        return False, f"Invalid exchange. Must be one of: {', '.join(VALID_EXCHANGES)}"
+        if order_data["exchange"] not in ("NSE_INDEX", "BSE_INDEX"):
+            return False, f"Invalid exchange. Must be one of: {', '.join(VALID_EXCHANGES)}"
 
     # Convert action to uppercase and validate
     if "action" in order_data:

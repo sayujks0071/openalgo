@@ -1,138 +1,107 @@
-# api/funds.py
-
-import json
 import os
 
-import httpx
+import jwt
+from dhanhq import dhanhq as Dhan
 
-from broker.dhan.api.baseurl import get_url
-from broker.dhan.api.order_api import get_positions
-from broker.dhan.mapping.order_data import map_position_data
-from utils.httpx_client import get_httpx_client
 from utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-def test_auth_token(auth_token):
-    """Test if the auth token is valid by making a simple API call to funds endpoint."""
-    api_key = os.getenv("BROKER_API_KEY")
+def _resolve_dhan_client_id(auth_token: str) -> str:
+    """
+    Resolve Dhan client ID using the most reliable source first.
 
-    # Get the shared httpx client with connection pooling
-    client = get_httpx_client()
-
-    headers = {
-        "access-token": auth_token,
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-    }
-
+    Priority:
+    1. JWT claim `dhanClientId` from the live access token
+    2. `BROKER_API_KEY` prefix in `client_id:::app_id` format
+    """
     try:
-        url = get_url("/v2/fundlimit")
-        res = client.get(url, headers=headers)
-        res.status = res.status_code
-        response_data = json.loads(res.text)
+        decoded = jwt.decode(auth_token, options={"verify_signature": False})
+        token_client_id = decoded.get("dhanClientId")
+        if token_client_id:
+            return str(token_client_id)
+    except Exception as err:
+        logger.debug(f"Unable to parse Dhan client ID from token: {err}")
 
-        # Check for authentication errors
-        if response_data.get("errorType") == "Invalid_Authentication":
-            error_msg = response_data.get("errorMessage", "Invalid authentication token")
-            return False, error_msg
+    broker_key = os.getenv("BROKER_API_KEY", "")
+    if ":::" in broker_key:
+        env_client_id = broker_key.split(":::", 1)[0].strip()
+        if env_client_id:
+            return env_client_id
 
-        # Check for other error types
-        if response_data.get("status") == "error":
-            error_msg = response_data.get("errors", "Unknown error occurred")
-            return False, str(error_msg)
+    return ""
 
-        # If we get here, authentication is valid
-        return True, None
+
+def test_auth_token(auth_token):
+    """Test if the auth token is valid using DhanHQ library."""
+    try:
+        client_id = _resolve_dhan_client_id(auth_token)
+        if not client_id:
+            return False, "Client ID not found in configuration"
+
+        dhan_client = Dhan(client_id, auth_token)
+
+        response = dhan_client.get_fund_limits()
+
+        if response.get("status") == "success":
+            return True, None
+        return False, response.get("remarks", "Unknown error")
 
     except Exception as e:
-        logger.error(f"Error testing auth token: {str(e)}")
+        logger.error(f"Error testing auth token with DhanHQ: {str(e)}")
         return False, f"Error validating authentication: {str(e)}"
 
 
 def get_margin_data(auth_token):
-    """Fetch margin data from Dhan API using the provided auth token."""
-    api_key = os.getenv("BROKER_API_KEY")
-
-    # Get the shared httpx client with connection pooling
-    client = get_httpx_client()
-
-    headers = {
-        "access-token": auth_token,
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-    }
-
-    url = get_url("/v2/fundlimit")
-    res = client.get(url, headers=headers)
-    # Add status attribute for compatibility with existing codebase
-    res.status = res.status_code
-    margin_data = json.loads(res.text)
-
-    logger.info(f"Funds Details: {margin_data}")
-
-    # Check for authentication errors first
-    if margin_data.get("errorType") == "Invalid_Authentication":
-        logger.error(f"Authentication error: {margin_data.get('errorMessage')}")
-        return {
-            "availablecash": "0.00",
-            "collateral": "0.00",
-            "m2munrealized": "0.00",
-            "m2mrealized": "0.00",
-            "utiliseddebits": "0.00",
-        }
-
-    if margin_data.get("status") == "error":
-        # Log the error or return an empty dictionary to indicate failure
-        logger.error(f"Error fetching margin data: {margin_data.get('errors')}")
-        return {
-            "availablecash": "0.00",
-            "collateral": "0.00",
-            "m2munrealized": "0.00",
-            "m2mrealized": "0.00",
-            "utiliseddebits": "0.00",
-        }
-
+    """Fetch margin data using DhanHQ library."""
     try:
-        position_book = get_positions(auth_token)
+        client_id = _resolve_dhan_client_id(auth_token)
 
-        logger.info(f"Positionbook: {position_book}")
+        if not client_id:
+            logger.error("Client ID not found in Dhan token or BROKER_API_KEY")
+            return {"errorType": "ConfigError", "errorMessage": "Client ID configuration missing"}
 
-        # Check if position_book is an error response
-        if isinstance(position_book, dict) and position_book.get("errorType"):
-            logger.error(
-                f"Error getting positions: {position_book.get('errorMessage', 'Unknown error')}"
-            )
-            total_realised = 0
-            total_unrealised = 0
-        else:
-            # If successful, process the positions
-            # position_book = map_position_data(position_book)
+        dhan_client = Dhan(client_id, auth_token)
 
-            def sum_realised_unrealised(position_book):
-                total_realised = 0
-                total_unrealised = 0
-                if isinstance(position_book, list):
-                    total_realised = sum(
-                        position.get("realizedProfit", 0) for position in position_book
-                    )
-                    total_unrealised = sum(
-                        position.get("unrealizedProfit", 0) for position in position_book
-                    )
-                return total_realised, total_unrealised
+        margin_response = dhan_client.get_fund_limits()
+        logger.info(f"DhanHQ Funds Response: {margin_response}")
 
-            total_realised, total_unrealised = sum_realised_unrealised(position_book)
+        if margin_response.get("status") != "success":
+            error_msg = margin_response.get("remarks", "Unknown error")
+            if "unauthorized" in str(error_msg).lower() or "invalid" in str(error_msg).lower():
+                return {"errorType": "Invalid_Authentication", "errorMessage": error_msg}
+            return {"errorType": "FundsError", "errorMessage": str(error_msg)}
 
-        # Construct and return the processed margin data with null checks
+        data = margin_response.get("data", {})
+
+        try:
+            pos_response = dhan_client.get_positions()
+            logger.info(f"DhanHQ Positions Response: {pos_response}")
+            position_book = pos_response.get("data", [])
+        except Exception as e:
+            logger.error(f"Error fetching positions: {e}")
+            position_book = []
+
+        total_realised = 0
+        total_unrealised = 0
+
+        if isinstance(position_book, list):
+            total_realised = sum(float(p.get("realizedProfit", 0)) for p in position_book)
+            total_unrealised = sum(float(p.get("unrealizedProfit", 0)) for p in position_book)
+
         processed_margin_data = {
-            "availablecash": "{:.2f}".format(margin_data.get("availabelBalance") or 0),
-            "collateral": "{:.2f}".format(margin_data.get("collateralAmount") or 0),
-            "m2munrealized": f"{total_unrealised or 0:.2f}",
-            "m2mrealized": f"{total_realised or 0:.2f}",
-            "utiliseddebits": "{:.2f}".format(margin_data.get("utilizedAmount") or 0),
+            "availablecash": "{:.2f}".format(
+                float(data.get("availabelBalance", data.get("availableBalance", 0)))
+            ),
+            "collateral": "{:.2f}".format(float(data.get("collateralAmount", 0))),
+            "m2munrealized": "{:.2f}".format(total_unrealised),
+            "m2mrealized": "{:.2f}".format(total_realised),
+            "utiliseddebits": "{:.2f}".format(float(data.get("utilizedAmount", 0))),
         }
+
         return processed_margin_data
-    except KeyError:
-        # Return an empty dictionary in case of unexpected data structure
-        return {}
+
+    except Exception as e:
+        logger.error(f"Error in get_margin_data (DhanHQ): {e}")
+        return {"errorType": "Exception", "errorMessage": str(e)}

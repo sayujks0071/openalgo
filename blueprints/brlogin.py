@@ -37,6 +37,7 @@ def ratelimit_handler(e):
 @limiter.limit(LOGIN_RATE_LIMIT_MIN)
 @limiter.limit(LOGIN_RATE_LIMIT_HOUR)
 def broker_callback(broker, para=None):
+    print(f"DEBUG: Broker callback hit for {broker}")
     logger.info(f"Broker callback initiated for: {broker}")
     logger.debug(f"Session contents: {dict(session)}")
     logger.info(f"Session has user key: {'user' in session}")

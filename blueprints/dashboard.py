@@ -20,7 +20,14 @@ def dashboard():
 
     if AUTH_TOKEN is None:
         logger.warning(f"No auth token found for user {login_username}")
-        return redirect(url_for("auth.logout"))
+        return (
+            render_template(
+                "dashboard.html",
+                margin_data={},
+                error_message="Broker authentication expired. Please reconnect your broker.",
+            ),
+            200,
+        )
 
     broker = session.get("broker")
     if not broker:
@@ -41,10 +48,22 @@ def dashboard():
         success, response, status_code = get_funds(auth_token=AUTH_TOKEN, broker=broker)
 
     if not success:
-        logger.error(f"Failed to get funds data: {response.get('message', 'Unknown error')}")
+        error_message = response.get("message", "Unknown error")
+        logger.error(f"Failed to get funds data: {error_message}")
         if status_code == 404:
-            return "Failed to import broker module", 500
-        return redirect(url_for("auth.logout"))
+            error_message = "Failed to import broker module"
+        if "Invalid_Authentication" in error_message:
+            try:
+                from database.auth_db import upsert_auth
+
+                upsert_auth(login_username, "", broker, revoke=True)
+                logger.warning(
+                    f"Revoked broker token for user {login_username} due to invalid auth"
+                )
+                error_message = "Invalid authentication. Please reconnect your broker."
+            except Exception as revoke_error:
+                logger.exception(f"Failed to revoke broker token: {revoke_error}")
+        return render_template("dashboard.html", margin_data={}, error_message=error_message), 200
 
     margin_data = response.get("data", {})
 
@@ -53,7 +72,14 @@ def dashboard():
         logger.error(
             f"Failed to get margin data for user {login_username} - authentication may have expired"
         )
-        return redirect(url_for("auth.logout"))
+        return (
+            render_template(
+                "dashboard.html",
+                margin_data={},
+                error_message="Failed to load margin data. Please reconnect your broker.",
+            ),
+            200,
+        )
 
     # Check if all values are zero (but don't log warning during known service hours)
     if (
@@ -65,4 +91,4 @@ def dashboard():
         # The service already logs the appropriate message
         logger.debug(f"All margin data values are zero for user {login_username}")
 
-    return render_template("dashboard.html", margin_data=margin_data)
+    return render_template("dashboard.html", margin_data=margin_data, error_message=None)

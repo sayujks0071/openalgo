@@ -5,7 +5,9 @@ load_and_check_env_variables()
 
 import mimetypes
 import re
+import subprocess
 import sys
+from pathlib import Path
 
 mimetypes.add_type("application/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
@@ -110,6 +112,41 @@ from websocket_proxy.app_integration import start_websocket_proxy
 
 # Initialize logger
 logger = get_logger(__name__)
+
+
+def start_strategy_watchdog_service():
+    """Start strategy watchdog as a detached subprocess (single-instance enforced by PID file)."""
+    if os.getenv("ENABLE_STRATEGY_WATCHDOG", "TRUE").upper() != "TRUE":
+        logger.debug("Strategy watchdog disabled via ENABLE_STRATEGY_WATCHDOG")
+        return
+
+    # In debug mode, skip Flask reloader parent to avoid duplicate startup attempts.
+    debug_mode = os.getenv("FLASK_DEBUG", "False").lower() in ("true", "1", "t")
+    if debug_mode and os.environ.get("WERKZEUG_RUN_MAIN") != "true":
+        return
+
+    base_dir = Path(__file__).resolve().parent
+    script_path = base_dir / "scripts" / "strategy_watchdog.py"
+    if not script_path.exists():
+        logger.warning(f"Strategy watchdog script not found: {script_path}")
+        return
+
+    logs_dir = base_dir / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    output_path = logs_dir / "watchdog_nohup.out"
+
+    try:
+        with output_path.open("a", encoding="utf-8") as out:
+            process = subprocess.Popen(
+                [sys.executable, str(script_path), "--interval", "60"],
+                cwd=str(base_dir),
+                stdout=out,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+        logger.info(f"Strategy watchdog startup requested (pid={process.pid})")
+    except Exception as e:
+        logger.error(f"Failed to start strategy watchdog: {e}")
 
 
 def create_app():
@@ -643,6 +680,13 @@ with app.app_context():
     except Exception as e:
         logger.error(f"Error checking analyzer mode on startup: {e}")
 
+# Auto-start strategy watchdog (detached process with internal single-instance lock)
+with app.app_context():
+    try:
+        start_strategy_watchdog_service()
+    except Exception as e:
+        logger.error(f"Error starting strategy watchdog: {e}")
+
 # Database session cleanup (teardown handler)
 @app.teardown_appcontext
 def shutdown_database_sessions(exception=None):
@@ -844,4 +888,11 @@ if __name__ == "__main__":
             "*.bak",
         ]
     }
-    socketio.run(app, host=host_ip, port=port, debug=debug, reloader_options=reloader_options)
+    socketio.run(
+        app,
+        host=host_ip,
+        port=port,
+        debug=debug,
+        reloader_options=reloader_options,
+        allow_unsafe_werkzeug=True,
+    )

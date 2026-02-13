@@ -74,6 +74,13 @@ def get_funds_with_auth(
         # Get funds data using broker's implementation
         funds = broker_module.get_margin_data(auth_token)
 
+        # Handle broker-reported errors consistently
+        if isinstance(funds, dict) and funds.get("errorType"):
+            error_type = funds.get("errorType")
+            error_message = funds.get("errorMessage", "Failed to get funds")
+            status_code = 401 if error_type == "Invalid_Authentication" else 502
+            return False, {"status": "error", "message": f"{error_type}: {error_message}"}, status_code
+
         return True, {"status": "success", "data": funds}, 200
     except Exception as e:
         logger.error(f"Error in broker_module.get_margin_data: {e}")

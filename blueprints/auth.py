@@ -29,7 +29,7 @@ from limiter import limiter  # Import the limiter instance
 from utils.email_debug import debug_smtp_connection
 from utils.email_utils import send_password_reset_email, send_test_email
 from utils.logging import get_logger
-from utils.session import check_session_validity
+from utils.session import check_session_validity, get_session_expiry_time, set_session_login_time
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -40,6 +40,15 @@ LOGIN_RATE_LIMIT_HOUR = os.getenv("LOGIN_RATE_LIMIT_HOUR", "25 per hour")
 RESET_RATE_LIMIT = os.getenv("RESET_RATE_LIMIT", "15 per hour")  # Password reset rate limit
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
+
+
+def _establish_logged_in_session(broker: str) -> None:
+    """Mark broker session as logged-in with expiry metadata expected by session validator."""
+    session["logged_in"] = True
+    session["broker"] = broker
+    current_app.config["PERMANENT_SESSION_LIFETIME"] = get_session_expiry_time()
+    session.permanent = True
+    set_session_login_time()
 
 
 @auth_bp.errorhandler(429)
@@ -88,8 +97,9 @@ def check_setup_required():
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
-@limiter.limit(LOGIN_RATE_LIMIT_MIN)
-@limiter.limit(LOGIN_RATE_LIMIT_HOUR)
+# Only rate-limit credential submissions (POST). GET should not burn limits.
+@limiter.limit(LOGIN_RATE_LIMIT_MIN, methods=["POST"])
+@limiter.limit(LOGIN_RATE_LIMIT_HOUR, methods=["POST"])
 def login():
     # Handle POST requests first (for React SPA / AJAX login)
     if request.method == "POST":
@@ -148,8 +158,25 @@ def broker_login():
         if "user" not in session:
             return redirect("/login")
 
-        # Redirect to React broker selection page
-        return redirect("/broker")
+        # Check for existing valid token in database to auto-login
+        try:
+            from database.auth_db import get_auth_token_dbquery
+
+            username = session["user"]
+            auth_obj = get_auth_token_dbquery(username)
+
+            if auth_obj and auth_obj.broker and not auth_obj.is_revoked:
+                # Found valid token, auto-login
+                _establish_logged_in_session(auth_obj.broker)
+                logger.info(
+                    f"Auto-login successful for user: {username} with broker: {auth_obj.broker}"
+                )
+                return redirect("/dashboard")
+        except Exception as e:
+            logger.error(f"Auto-login check failed: {str(e)}")
+
+        # Redirect to dashboard (fallback)
+        return redirect("/dashboard")
 
 
 @auth_bp.route("/reset-password", methods=["GET", "POST"])
@@ -507,7 +534,12 @@ def get_session_status():
         # Return 200 with authenticated: false instead of 401
         # This prevents unnecessary console errors in the browser
         return jsonify(
-            {"status": "success", "message": "Not authenticated", "authenticated": False, "logged_in": False}
+            {
+                "status": "success",
+                "message": "Not authenticated",
+                "authenticated": False,
+                "logged_in": False,
+            }
         ), 200
 
     # If session claims to be logged in with broker, validate the auth token exists
@@ -522,11 +554,20 @@ def get_session_status():
             # Clear the stale session
             session.clear()
             return jsonify(
-                {"status": "success", "message": "Session expired", "authenticated": False, "logged_in": False}
+                {
+                    "status": "success",
+                    "message": "Session expired",
+                    "authenticated": False,
+                    "logged_in": False,
+                }
             ), 200
 
         # Get API key for the user
         api_key = get_api_key_for_tradingview(session.get("user"))
+
+        # Backward compatibility: older sessions may have logged_in set without login_time.
+        if "login_time" not in session:
+            _establish_logged_in_session(session.get("broker"))
 
         return jsonify(
             {
@@ -538,6 +579,39 @@ def get_session_status():
                 "api_key": api_key,
             }
         )
+
+    # Check for existing valid token in database to auto-login
+    if not session.get("logged_in") and session.get("user"):
+        try:
+            from database.auth_db import get_auth_token_dbquery
+
+            username = session["user"]
+            auth_obj = get_auth_token_dbquery(username)
+
+            if auth_obj and auth_obj.broker and not auth_obj.is_revoked:
+                # Found valid token, auto-login
+                _establish_logged_in_session(auth_obj.broker)
+                logger.info(
+                    f"Auto-login (session_status) successful for user: {username} with broker: {auth_obj.broker}"
+                )
+
+                # Retrieve API Key for response
+                from database.auth_db import get_api_key_for_tradingview
+
+                api_key = get_api_key_for_tradingview(username)
+
+                return jsonify(
+                    {
+                        "status": "success",
+                        "authenticated": True,
+                        "logged_in": True,
+                        "user": username,
+                        "broker": auth_obj.broker,
+                        "api_key": api_key,
+                    }
+                )
+        except Exception as e:
+            logger.error(f"Auto-login (session_status) check failed: {str(e)}")
 
     return jsonify(
         {
@@ -672,7 +746,15 @@ def get_dashboard_data():
 
         if AUTH_TOKEN is None:
             logger.warning(f"No auth token found for user {login_username}")
-            return jsonify({"status": "error", "message": "Session expired"}), 401
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "Broker authentication expired. Please reconnect your broker.",
+                    }
+                ),
+                200,
+            )
 
         # Check if in analyze mode
         if get_analyze_mode():
@@ -687,16 +769,31 @@ def get_dashboard_data():
             success, response, status_code = get_funds(auth_token=AUTH_TOKEN, broker=broker)
 
         if not success:
-            logger.error(f"Failed to get funds data: {response.get('message', 'Unknown error')}")
-            return jsonify(
-                {"status": "error", "message": response.get("message", "Failed to get funds")}
-            ), status_code
+            error_message = response.get("message", "Failed to get funds")
+            logger.error(f"Failed to get funds data: {error_message}")
+
+            # Revoke stored token on invalid authentication to force re-connect
+            if "Invalid_Authentication" in error_message:
+                try:
+                    from database.auth_db import upsert_auth
+
+                    upsert_auth(login_username, "", broker, revoke=True)
+                    logger.warning(f"Revoked broker token for user {login_username} due to invalid auth")
+                except Exception as revoke_error:
+                    logger.exception(f"Failed to revoke broker token: {revoke_error}")
+
+            return jsonify({"status": "error", "message": error_message}), 200
 
         margin_data = response.get("data", {})
 
         if not margin_data:
             logger.error(f"Failed to get margin data for user {login_username}")
-            return jsonify({"status": "error", "message": "Failed to get margin data"}), 500
+            return jsonify(
+                {
+                    "status": "error",
+                    "message": "Failed to get margin data. Please reconnect your broker.",
+                }
+            ), 200
 
         return jsonify({"status": "success", "data": margin_data})
 

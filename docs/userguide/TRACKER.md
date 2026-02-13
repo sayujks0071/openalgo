@@ -43,6 +43,7 @@ This comprehensive user guide is designed for **traders of all levels** - from c
 | 28 | Two-Factor Authentication | ✅ Complete | Beginner |
 | 29 | Troubleshooting | ✅ Complete | All Levels |
 | 30 | FAQs | ✅ Complete | All Levels |
+| 31 | FastScalper NIFTY & BANKNIFTY Options – Intraday Scalping Playbook | ✅ Complete | Intermediate |
 
 ## Learning Path
 
