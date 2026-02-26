@@ -42,7 +42,9 @@ def main() -> int:
     load_env(openalgo_dir)
 
     parser = argparse.ArgumentParser(description="Rotate local OpenAlgo API key")
-    parser.add_argument("--user-id", default=None, help="User id to rotate (defaults to active auth user)")
+    parser.add_argument(
+        "--user-id", default=None, help="User id to rotate (defaults to active auth user)"
+    )
     parser.add_argument(
         "--length-bytes",
         type=int,
@@ -58,7 +60,9 @@ def main() -> int:
 
     api_key = secrets.token_hex(max(16, int(args.length_bytes)))
 
-    from database.auth_db import upsert_api_key
+    from database.auth_db import upsert_api_key, PEPPER
+
+    print(f"DEBUG: Regenerate script using PEPPER: {repr(PEPPER)}")
 
     upsert_api_key(user_id=user_id, api_key=api_key)
 
@@ -73,4 +77,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

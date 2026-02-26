@@ -945,3 +945,25 @@ def change_password_api():
     except Exception as e:
         logger.exception(f"Error changing password: {e}")
         return jsonify({"status": "error", "message": "Failed to change password"}), 500
+
+
+@auth_bp.route("/autologin/<token>", methods=["GET"])
+def autologin(token):
+    """Temporary auto-login route for local development - directly authenticates with Dhan."""
+    import hashlib
+    secret = os.getenv("API_KEY_PEPPER", "")[:16]
+    expected = hashlib.sha256((secret + "autologin2026").encode()).hexdigest()[:16]
+    if token != expected:
+        return "Unauthorized", 403
+    # Establish user session
+    session["user"] = "sks20417"
+    # Directly authenticate with stored Dhan access token
+    dhan_token = os.getenv("DHAN_ACCESS_TOKEN", "")
+    if dhan_token:
+        from utils.auth_utils import handle_auth_success
+        dhan_client_id = os.getenv("DHAN_CLIENT_ID", "1105009139")
+        return handle_auth_success(
+            dhan_token, "sks20417", "dhan", feed_token=None, user_id=dhan_client_id
+        )
+    # Fallback: redirect to Dhan OAuth page
+    return redirect(url_for("brlogin.dhan_initiate_oauth"))

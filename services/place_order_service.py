@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, Tuple
 
 from database.analyzer_db import async_log_analyzer
 from database.apilog_db import async_log_order, executor
+from database.agent_db import log_agent_incident, log_agent_outcome
 from database.auth_db import get_auth_token_broker
 from database.settings_db import get_analyze_mode
 from extensions import socketio
@@ -19,6 +20,17 @@ from utils.constants import (
     VALID_PRODUCT_TYPES,
 )
 from utils.logging import get_logger
+try:
+    from agent import get_agent_client
+    from agent.schemas import DecisionRequest
+except Exception:
+    get_agent_client = None
+    DecisionRequest = None
+
+try:
+    from services.exposure_controller_service import evaluate_exposure
+except Exception:
+    evaluate_exposure = None
 
 # Initialize logger
 logger = get_logger(__name__)
@@ -180,8 +192,88 @@ def place_order_with_auth(
         return False, error_response, 404
 
     try:
+        # Agent exposure gate (hard fail only on explicit block)
+        if evaluate_exposure:
+            ok, reason, meta = evaluate_exposure(
+                strategy_id=str(order_data.get("strategy", "place_order")),
+                segment=str(order_data.get("exchange", "UNKNOWN")),
+                intended_trade={
+                    "symbol": order_data.get("symbol"),
+                    "exchange": order_data.get("exchange"),
+                    "quantity": order_data.get("quantity"),
+                },
+            )
+            if not ok:
+                error_response = {
+                    "status": "error",
+                    "message": f"Exposure blocked: {reason}",
+                    "meta": meta,
+                }
+                executor.submit(async_log_order, "placeorder", original_data, error_response)
+                return False, error_response, 409
+
+        # Agent execution style router (safe bounded overrides only)
+        if get_agent_client and DecisionRequest:
+            try:
+                req = DecisionRequest(
+                    segment=str(order_data.get("exchange", "UNKNOWN")),
+                    strategy_id=str(order_data.get("strategy", "place_order")),
+                    symbol=str(order_data.get("symbol", "")),
+                    features={
+                        "spread_bps": float(order_data.get("spread_bps", 0) or 0),
+                        "price_type": order_data.get("price_type", ""),
+                        "product_type": order_data.get("product_type", ""),
+                    },
+                    context={},
+                    constraints={"guardrails_enabled": True},
+                )
+                decision = get_agent_client().decide(
+                    route="/v1/decision/execution-style",
+                    request=req,
+                    fallback_decision="ROUTE",
+                    confidence_override_required=True,
+                )
+                if decision.fallback_required:
+                    log_agent_incident(
+                        request_id=req.request_id,
+                        strategy_id=str(order_data.get("strategy", "place_order")),
+                        segment=str(order_data.get("exchange", "UNKNOWN")),
+                        symbol=str(order_data.get("symbol", "")),
+                        incident_type="DETERMINISTIC_FALLBACK",
+                        severity="low",
+                        message=";".join(decision.reasons or ["DETERMINISTIC_FALLBACK"]),
+                        route="/v1/decision/execution-style",
+                    )
+                if not decision.fallback_required and decision.decision in ("ROUTE", "ALLOW"):
+                    style = str(decision.params.get("order_style", "")).upper()
+                    urgency = str(decision.params.get("urgency", "")).upper()
+                    if style in ("MARKET", "LIMIT", "SL", "SL-M"):
+                        order_data["price_type"] = style
+                    if urgency in ("LOW", "MEDIUM", "HIGH"):
+                        order_data["urgency"] = urgency
+            except Exception:
+                pass
+
         # Call the broker's place_order_api function
-        res, response_data, order_id = broker_module.place_order_api(order_data, auth_token)
+        max_attempts = 2
+        res = None
+        response_data = {}
+        order_id = None
+        last_exc = None
+        for attempt in range(1, max_attempts + 1):
+            try:
+                res, response_data, order_id = broker_module.place_order_api(order_data, auth_token)
+                # retry only on explicit transient broker/network style failures
+                if getattr(res, "status", 500) == 200:
+                    break
+                msg = str(response_data.get("message", "")).lower() if isinstance(response_data, dict) else ""
+                if attempt < max_attempts and any(k in msg for k in ("timeout", "temporar", "rate limit", "network")):
+                    continue
+                break
+            except Exception as exc:
+                last_exc = exc
+                if attempt >= max_attempts:
+                    raise
     except Exception as e:
         logger.error(f"Error in broker_module.place_order_api: {e}")
         traceback.print_exc()
@@ -192,7 +284,7 @@ def place_order_with_auth(
         executor.submit(async_log_order, "placeorder", original_data, error_response)
         return False, error_response, 500
 
-    if res.status == 200:
+    if getattr(res, "status", None) == 200:
         # Emit SocketIO event asynchronously (non-blocking)
         # Skip event emission for batch orders (they emit a summary event at the end)
         if emit_event:
@@ -210,6 +302,17 @@ def place_order_with_auth(
                 },
             )
         order_response_data = {"status": "success", "orderid": order_id}
+        try:
+            log_agent_outcome(
+                request_id=str(order_id or ""),
+                strategy_id=str(order_data.get("strategy", "place_order")),
+                segment=str(order_data.get("exchange", "UNKNOWN")),
+                symbol=str(order_data.get("symbol", "")),
+                outcome_pnl=0.0,
+                metadata={"event": "order_placed"},
+            )
+        except Exception:
+            pass
         executor.submit(async_log_order, "placeorder", order_request_data, order_response_data)
         # Send Telegram alert in background task (non-blocking)
         # Moves DB lookups + formatting off request thread entirely
@@ -222,14 +325,31 @@ def place_order_with_auth(
         )
         return True, order_response_data, 200
     else:
-        message = (
-            response_data.get("message", "Failed to place order")
-            if isinstance(response_data, dict)
-            else "Failed to place order"
-        )
+        if isinstance(response_data, dict):
+            message = response_data.get("message")
+            if not message:
+                # Preserve broker-native reject reason when "message" key is absent.
+                if response_data.get("errorMessage"):
+                    message = str(response_data.get("errorMessage"))
+                elif response_data.get("errorType"):
+                    message = f"{response_data.get('errorType')}: {response_data.get('errorCode', '')}".strip(
+                        ": "
+                    )
+                elif response_data.get("status") in ("failed", "error") and isinstance(
+                    response_data.get("data"), dict
+                ):
+                    data_errors = response_data.get("data") or {}
+                    if data_errors:
+                        k = next(iter(data_errors.keys()))
+                        message = f"{k}: {data_errors.get(k)}"
+            if not message:
+                message = f"Failed to place order: {response_data}"
+        else:
+            message = "Failed to place order"
         error_response = {"status": "error", "message": message}
         executor.submit(async_log_order, "placeorder", original_data, error_response)
-        return False, error_response, res.status if res.status != 200 else 500
+        status_code = getattr(res, "status", 500)
+        return False, error_response, status_code if status_code != 200 else 500
 
 
 def place_order(

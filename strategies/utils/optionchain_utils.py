@@ -2,6 +2,19 @@ import requests
 import time
 from datetime import datetime, timedelta
 
+
+def _parse_expiry_date(value):
+    """Parse common expiry formats returned by OpenAlgo/Dhan APIs."""
+    if not value:
+        return None
+    s = str(value).strip().upper()
+    for fmt in ("%d%b%y", "%d-%b-%y", "%d-%b-%Y", "%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(s, fmt)
+        except ValueError:
+            continue
+    return None
+
 def safe_float(value, default=0.0):
     try:
         if value is None:
@@ -22,17 +35,10 @@ def normalize_expiry(expiry_date):
     """Normalizes expiry date string to DDMMMYY format (e.g., 14FEB26)."""
     if not expiry_date:
         return None
-    try:
-        # If already in format, return as is (uppercase)
-        # Check if it matches expected format length roughly
-        expiry_date = expiry_date.strip().upper()
-        datetime.strptime(expiry_date, "%d%b%y")
-        return expiry_date
-    except ValueError:
-        pass
-
-    # Try other formats if needed, but usually API returns DDMMMYY
-    return expiry_date
+    dt = _parse_expiry_date(expiry_date)
+    if dt:
+        return dt.strftime("%d%b%y").upper()
+    return str(expiry_date).strip().upper()
 
 def choose_nearest_expiry(expiry_dates):
     """
@@ -45,12 +51,12 @@ def choose_nearest_expiry(expiry_dates):
     valid_dates = []
 
     for d_str in expiry_dates:
-        try:
-            d_date = datetime.strptime(d_str, "%d%b%y").date()
-            if d_date >= today:
-                valid_dates.append((d_date, d_str))
-        except ValueError:
+        d_dt = _parse_expiry_date(d_str)
+        if not d_dt:
             continue
+        d_date = d_dt.date()
+        if d_date >= today:
+            valid_dates.append((d_date, normalize_expiry(d_str)))
 
     if not valid_dates:
         return None
@@ -71,12 +77,12 @@ def choose_monthly_expiry(expiry_dates):
     future_dates = []
 
     for d_str in expiry_dates:
-        try:
-            d_date = datetime.strptime(d_str, "%d%b%y").date()
-            if d_date >= today:
-                future_dates.append((d_date, d_str))
-        except ValueError:
+        d_dt = _parse_expiry_date(d_str)
+        if not d_dt:
             continue
+        d_date = d_dt.date()
+        if d_date >= today:
+            future_dates.append((d_date, normalize_expiry(d_str)))
 
     if not future_dates:
         return None
@@ -174,11 +180,15 @@ class OptionChainClient:
             return {"status": "error", "message": str(e)}
 
     def expiry(self, underlying, exchange, instrument_type="options"):
-        return self._post("expiry", {
-            "underlying": underlying,
-            "exchange": exchange,
-            "instrument_type": instrument_type
-        })
+        # REST schema expects: symbol + instrumenttype (not underlying + instrument_type)
+        return self._post(
+            "expiry",
+            {
+                "symbol": underlying,
+                "exchange": exchange,
+                "instrumenttype": instrument_type,
+            },
+        )
 
     def optionchain(self, underlying, exchange, expiry_date, strike_count=10):
         return self._post("optionchain", {
@@ -206,7 +216,7 @@ class OptionPositionTracker:
         self.entry_time = None
         self.side = None        # "BUY" or "SELL" (net position bias)
 
-    def add_legs(self, legs, entry_prices, side):
+    def add_legs(self, legs, entry_prices, side="BUY"):
         """
         legs: List of leg details dicts (must contain 'symbol', 'action', 'quantity')
         entry_prices: List of entry prices corresponding to legs
@@ -214,11 +224,17 @@ class OptionPositionTracker:
         """
         self.open_legs = []
         self.entry_time = datetime.now()
-        self.side = side.upper()
+        self.side = (side or "BUY").upper()
+
+        is_price_map = isinstance(entry_prices, dict)
 
         for i, leg in enumerate(legs):
             leg_data = leg.copy()
-            leg_data["entry_price"] = safe_float(entry_prices[i])
+            if is_price_map:
+                key = (leg.get("offset"), leg.get("option_type"))
+                leg_data["entry_price"] = safe_float(entry_prices.get(key, 0.0))
+            else:
+                leg_data["entry_price"] = safe_float(entry_prices[i])
             self.open_legs.append(leg_data)
 
     def should_exit(self, chain):

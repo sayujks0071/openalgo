@@ -52,23 +52,48 @@ def request(method: str, url: str, **kwargs) -> httpx.Response:
     """
     import time
 
-    from flask import g
+    from flask import g, has_request_context
 
     client = get_httpx_client()
 
-    # Track actual broker API call time for latency monitoring
+    # Extract retry parameters
+    max_retries = kwargs.pop("max_retries", 0)
+    backoff_factor = kwargs.pop("backoff_factor", 0.5)
+
+    # Track actual broker API call time
     broker_api_start = time.time()
-    response = client.request(method, url, **kwargs)
+
+    response = None
+    last_exception = None
+
+    for attempt in range(max_retries + 1):
+        try:
+            response = client.request(method, url, **kwargs)
+
+            # If successful (or at least no exception), break
+            # Note: 4xx/5xx are not exceptions in httpx unless raise_for_status called
+            # We treat them as valid responses here and let caller handle status
+            break
+        except httpx.RequestError as e:
+            last_exception = e
+            if attempt < max_retries:
+                sleep_time = backoff_factor * (2**attempt)
+                logger.warning(f"Request failed ({e}), retrying in {sleep_time:.2f}s...")
+                time.sleep(sleep_time)
+            else:
+                logger.error(f"Request failed after {max_retries} retries: {e}")
+                raise last_exception from e
+
     broker_api_end = time.time()
 
     # Store broker API time in Flask's g object for latency tracking
-    if hasattr(g, "latency_tracker"):
+    if has_request_context() and hasattr(g, "latency_tracker"):
         broker_api_time_ms = (broker_api_end - broker_api_start) * 1000
         g.broker_api_time = broker_api_time_ms
         logger.debug(f"Broker API call took {broker_api_time_ms:.2f}ms")
 
     # Log the actual HTTP version used (info level for visibility)
-    if response.http_version:
+    if response and response.http_version:
         logger.info(f"Request used {response.http_version} - URL: {url[:50]}...")
 
     return response

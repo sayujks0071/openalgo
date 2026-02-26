@@ -40,6 +40,39 @@ BREACH_KEYWORDS = (
     "Trading halted",
 )
 
+
+def query_agent_risk_sentinel(strategy_id: str, keyword: str) -> str:
+    """Return ALLOW/PAUSE/FLATTEN from local agent gateway; fail-safe ALLOW on errors."""
+    endpoint = os.getenv("OA_AGENT_ENDPOINT", "http://127.0.0.1:9101").rstrip("/")
+    if os.getenv("OA_AGENTLIGHTNING_ENABLED", "0").lower() not in ("1", "true", "yes", "on"):
+        return "ALLOW"
+    try:
+        resp = requests.post(
+            f"{endpoint}/v1/decision/risk-sentinel",
+            json={
+                "request_id": f"watchdog-{strategy_id}-{int(time.time())}",
+                "timestamp": now_ist_iso(),
+                "segment": "WATCHDOG",
+                "strategy_id": strategy_id,
+                "symbol": "*",
+                "features": {
+                    "daily_loss_abs": 0,
+                    "max_daily_loss_abs": 0,
+                    "rejection_rate": 0,
+                    "breach_keyword": keyword,
+                },
+                "context": {},
+                "constraints": {"guardrails_enabled": True},
+            },
+            timeout=0.6,
+        )
+        if resp.status_code == 200:
+            payload = resp.json() or {}
+            return str(payload.get("decision", "ALLOW")).upper()
+    except Exception:
+        pass
+    return "ALLOW"
+
 logger = logging.getLogger("strategy_watchdog")
 
 
@@ -234,12 +267,22 @@ def enforce_cycle() -> None:
         if running:
             breach, keyword = log_shows_breach(strategy_id)
             if breach:
+                # Double-condition FLATTEN rule:
+                # 1) deterministic breach keyword matched
+                # 2) agent asks for FLATTEN or PAUSE
+                agent_decision = query_agent_risk_sentinel(strategy_id, keyword)
+                if agent_decision not in ("FLATTEN", "PAUSE"):
+                    # Keep deterministic safety behavior: still pause strategy on breach.
+                    agent_decision = "PAUSE"
+
                 stopped = terminate_pid(pid_int)
                 cfg["is_running"] = False
                 cfg["pid"] = None
                 cfg["manually_stopped"] = True
                 cfg["paused_reason"] = "risk_breach"
-                cfg["paused_message"] = f"Watchdog stopped after breach keyword: {keyword}"
+                cfg["paused_message"] = (
+                    f"Watchdog stopped after breach keyword: {keyword} | agent={agent_decision}"
+                )
                 cfg["last_stopped"] = now_ist_iso()
                 dirty = True
                 emit_alert(

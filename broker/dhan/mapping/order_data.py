@@ -143,6 +143,8 @@ def transform_order_data(orders):
             "product": order.get("productType", ""),
             "orderid": order.get("orderId", ""),
             "order_status": order.get("orderStatus", ""),
+            "reject_reason": order.get("omsErrorDescription", ""),
+            "reject_code": order.get("omsErrorCode", ""),
             "timestamp": order.get("updateTime", ""),
         }
 

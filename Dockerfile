@@ -15,11 +15,13 @@ RUN pip install --no-cache-dir uv && \
 
 # ------------------------------ Frontend Builder Stage --------------------- #
 FROM node:20-bullseye-slim AS frontend-builder
-WORKDIR /app
-COPY frontend/package*.json ./frontend/
-RUN cd frontend && npm install
-COPY frontend/ ./frontend/
-RUN cd frontend && npm run build
+WORKDIR /app/frontend
+# Prevent Node from over-allocating memory during Vite/TypeScript build on small hosts.
+ENV NODE_OPTIONS=--max-old-space-size=1536
+COPY frontend/package*.json ./
+RUN npm ci --include=dev --no-audit --no-fund
+COPY frontend/ ./
+RUN npm run build
 
 # --------------------------------------------------------------------------- #
 # ------------------------------ Production Stage --------------------------- #

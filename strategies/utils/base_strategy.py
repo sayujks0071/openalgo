@@ -87,6 +87,15 @@ except ImportError:
             normalize_symbol,
         )
 
+try:
+    from agent import get_agent_client
+    from agent.schemas import DecisionRequest
+    from agent.feature_engine import compute_ta_features
+except Exception:
+    get_agent_client = None
+    DecisionRequest = None
+    compute_ta_features = None
+
 class BaseStrategy:
     def __init__(self, name=None, symbol=None, quantity=1, interval="5m", exchange="NSE",
                  api_key=None, host=None, ignore_time=False, log_file=None, client=None,
@@ -411,8 +420,54 @@ class BaseStrategy:
             return self.quantity
 
         monthly_atr = self.get_monthly_atr()
+        ta_features = {}
+        ta_quality = {}
+        if compute_ta_features:
+            try:
+                hist = self.fetch_history(days=5, interval=self.interval)
+                ta_bundle = compute_ta_features(hist)
+                ta_features = ta_bundle.get("values", {}) or {}
+                ta_quality = ta_bundle.get("quality", {}) or {}
+            except Exception:
+                ta_features = {}
+                ta_quality = {}
+        risk_scalar = 1.0
+        if get_agent_client and DecisionRequest and self.pm:
+            try:
+                client = get_agent_client()
+                req = DecisionRequest(
+                    segment=self.exchange,
+                    strategy_id=self.name,
+                    symbol=self.symbol or "",
+                    features={
+                        "risk_pct": risk_pct,
+                        "capital": capital,
+                        "price": price,
+                        "monthly_atr": monthly_atr,
+                        **ta_features,
+                    },
+                    context={
+                        "position_qty": int(self.pm.get_net_position()) if hasattr(self.pm, "get_net_position") else 0,
+                        "quality": ta_quality,
+                    },
+                    constraints={"guardrails_enabled": True},
+                )
+                decision = client.decide(
+                    route="/v1/decision/position-size",
+                    request=req,
+                    fallback_decision="ALLOW",
+                    confidence_override_required=True,
+                )
+                if not decision.fallback_required:
+                    risk_scalar = float(decision.params.get("risk_scalar", 1.0) or 1.0)
+                    risk_scalar = max(0.5, min(1.25, risk_scalar))
+            except Exception as e:
+                self.logger.debug(f"Agent position-size decision failed: {e}")
+
         if monthly_atr > 0:
-            qty = self.pm.calculate_adaptive_quantity_monthly_atr(capital, risk_pct, monthly_atr, price)
+            qty = self.pm.calculate_adaptive_quantity_monthly_atr(
+                capital, risk_pct * risk_scalar, monthly_atr, price
+            )
             self.logger.info(f"Adaptive Quantity: {qty} (Monthly ATR: {monthly_atr:.2f})")
             return qty
 

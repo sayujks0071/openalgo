@@ -22,6 +22,9 @@ class SymbolResolver:
         if os.path.exists(self.instruments_path):
             try:
                 self.df = pd.read_csv(self.instruments_path)
+                # Normalize schema variants used across exports.
+                if 'instrument_type' not in self.df.columns and 'instrumenttype' in self.df.columns:
+                    self.df['instrument_type'] = self.df['instrumenttype']
                 # Ensure expiry is datetime
                 if 'expiry' in self.df.columns:
                     self.df['expiry'] = pd.to_datetime(self.df['expiry'], errors='coerce')

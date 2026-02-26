@@ -186,3 +186,60 @@ class RiskManager:
             return True, "take_profit"
 
         return False, ""
+
+
+class PositionSync:
+    """
+    Lightweight position reconciliation helper used by strategy scripts.
+    """
+
+    def __init__(self, every_n=10, pause_on_mismatch_sec=120):
+        self.every_n = max(1, int(every_n))
+        self.pause_on_mismatch_sec = max(0, int(pause_on_mismatch_sec))
+        self._counter = 0
+        self._paused_until = 0.0
+
+    def tick(self):
+        self._counter += 1
+        if self._counter >= self.every_n:
+            self._counter = 0
+            return True
+        return False
+
+    def is_paused(self):
+        return time.time() < self._paused_until
+
+    def reconcile(self, local_position, broker_position):
+        """
+        Returns (ok, reason). Accepts numeric positions or objects with
+        qty/quantity/position attributes.
+        """
+        def to_qty(value):
+            if value is None:
+                return 0
+            if isinstance(value, (int, float)):
+                return int(value)
+            for key in ("qty", "quantity", "position", "net_position"):
+                if hasattr(value, key):
+                    try:
+                        return int(getattr(value, key))
+                    except Exception:
+                        pass
+                if isinstance(value, dict) and key in value:
+                    try:
+                        return int(value.get(key) or 0)
+                    except Exception:
+                        pass
+            try:
+                return int(value)
+            except Exception:
+                return 0
+
+        l_qty = to_qty(local_position)
+        b_qty = to_qty(broker_position)
+        if l_qty == b_qty:
+            return True, "in_sync"
+
+        if self.pause_on_mismatch_sec > 0:
+            self._paused_until = time.time() + self.pause_on_mismatch_sec
+        return False, f"position_mismatch local={l_qty} broker={b_qty}"

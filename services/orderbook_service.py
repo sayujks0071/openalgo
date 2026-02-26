@@ -1,8 +1,10 @@
 import importlib
+import time
 import traceback
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from database.auth_db import get_auth_token_broker
+from database.agent_db import log_agent_incident
 from utils.logging import get_logger
 
 # Initialize logger
@@ -145,8 +147,19 @@ def get_orderbook_with_auth(
         return False, {"status": "error", "message": "Broker-specific module not found"}, 404
 
     try:
-        # Get orderbook data using broker's implementation
-        order_data = broker_funcs["get_order_book"](auth_token)
+        # Get orderbook data using broker's implementation (idempotent retry on transient failures)
+        last_error = None
+        order_data = None
+        for attempt in range(1, 3):
+            try:
+                order_data = broker_funcs["get_order_book"](auth_token)
+                break
+            except Exception as exc:
+                last_error = exc
+                if attempt < 2:
+                    time.sleep(0.2)
+                    continue
+                raise
 
         if "status" in order_data and order_data["status"] == "error":
             return (
@@ -177,6 +190,16 @@ def get_orderbook_with_auth(
         )
     except Exception as e:
         logger.error(f"Error processing order data: {e}")
+        log_agent_incident(
+            request_id="",
+            strategy_id="orderbook_service",
+            segment="BROKER",
+            symbol="",
+            incident_type="BROKER_ORDERBOOK_ERROR",
+            severity="medium",
+            message=str(e),
+            route="/api/v1/orderbook",
+        )
         traceback.print_exc()
         return False, {"status": "error", "message": str(e)}, 500
 

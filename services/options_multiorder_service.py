@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from database.analyzer_db import async_log_analyzer
 from database.apilog_db import async_log_order
 from database.apilog_db import executor as log_executor
+from database.agent_db import log_agent_incident
 from database.auth_db import get_auth_token_broker
 from database.settings_db import get_analyze_mode
 from extensions import socketio
@@ -22,6 +23,16 @@ from services.place_order_service import place_order
 from services.quotes_service import get_quotes
 from services.telegram_alert_service import telegram_alert_service
 from utils.logging import get_logger
+try:
+    from agent import get_agent_client
+    from agent.schemas import DecisionRequest
+except Exception:
+    get_agent_client = None
+    DecisionRequest = None
+try:
+    from services.exposure_controller_service import evaluate_exposure
+except Exception:
+    evaluate_exposure = None
 
 logger = get_logger(__name__)
 
@@ -38,6 +49,35 @@ def get_order_rate_limit():
         return 1.0 / rate if rate > 0 else 0.1
     except (ValueError, IndexError):
         return 0.1  # Default 100ms delay
+
+
+def normalize_leg_quantity(raw_quantity: Any, lotsize: int) -> tuple[int | None, str | None]:
+    """
+    Normalize quantity for option orders to broker-valid units.
+
+    Rules:
+    - quantity must be > 0
+    - if lotsize is known and quantity < lotsize, treat it as 1 lot and bump to lotsize
+    - if lotsize is known and quantity is not a multiple of lotsize, reject with clear message
+    """
+    try:
+        quantity = int(raw_quantity)
+    except (TypeError, ValueError):
+        return None, "Quantity must be a valid integer"
+
+    if quantity <= 0:
+        return None, "Quantity must be greater than 0"
+
+    if lotsize and lotsize > 0:
+        if quantity < lotsize:
+            logger.warning(
+                f"Quantity {quantity} is below lot size {lotsize}; auto-adjusting to 1 lot ({lotsize})."
+            )
+            return lotsize, None
+        if quantity % lotsize != 0:
+            return None, f"Invalid quantity {quantity}. Must be a multiple of lot size {lotsize}."
+
+    return quantity, None
 
 
 def get_underlying_ltp(
@@ -237,9 +277,26 @@ def resolve_and_place_leg(
         resolved_exchange = symbol_response.get("exchange")
         underlying_ltp = symbol_response.get("underlying_ltp")
 
+        # Validate/normalize quantity using resolved lot size
+        resolved_lotsize = int(symbol_response.get("lotsize") or 0)
+        normalized_qty, qty_error = normalize_leg_quantity(
+            leg_data.get("quantity"), resolved_lotsize
+        )
+        if qty_error:
+            return {
+                "leg": leg_index + 1,
+                "symbol": resolved_symbol,
+                "exchange": resolved_exchange,
+                "offset": leg_data.get("offset"),
+                "option_type": leg_data.get("option_type", "").upper(),
+                "action": leg_data.get("action", "").upper(),
+                "status": "error",
+                "message": qty_error,
+            }
+
         # Check if split order is requested for this leg
         splitsize = leg_data.get("splitsize", 0) or 0
-        total_quantity = int(leg_data.get("quantity", 0))
+        total_quantity = int(normalized_qty)
 
         # Step 2: Handle split orders if splitsize > 0
         if splitsize > 0:
@@ -279,6 +336,39 @@ def resolve_and_place_leg(
                 "disclosed_quantity": leg_data.get("disclosed_quantity", 0),
                 "underlying_ltp": underlying_ltp,  # Pass LTP for execution reference
             }
+            if get_agent_client and DecisionRequest:
+                try:
+                    req = DecisionRequest(
+                        segment=resolved_exchange,
+                        strategy_id=str(common_data.get("strategy") or "optionsmultiorder"),
+                        symbol=str(resolved_symbol),
+                        features={"spread_bps": 0.0, "price_type": base_order_data["pricetype"]},
+                        context={"leg": leg_index + 1},
+                        constraints={"guardrails_enabled": True},
+                    )
+                    d = get_agent_client().decide(
+                        route="/v1/decision/execution-style",
+                        request=req,
+                        fallback_decision="ROUTE",
+                        confidence_override_required=True,
+                    )
+                    if d.fallback_required:
+                        log_agent_incident(
+                            request_id=req.request_id,
+                            strategy_id=str(common_data.get("strategy") or "optionsmultiorder"),
+                            segment=str(resolved_exchange),
+                            symbol=str(resolved_symbol),
+                            incident_type="DETERMINISTIC_FALLBACK",
+                            severity="low",
+                            message=";".join(d.reasons or ["DETERMINISTIC_FALLBACK"]),
+                            route="/v1/decision/execution-style",
+                        )
+                    if not d.fallback_required and isinstance(d.params, dict):
+                        style = str(d.params.get("order_style", "")).upper()
+                        if style in ("MARKET", "LIMIT", "SL", "SL-M"):
+                            base_order_data["pricetype"] = style
+                except Exception:
+                    pass
 
             # Process split orders sequentially with rate limiting
             split_results = []
@@ -331,7 +421,7 @@ def resolve_and_place_leg(
             "exchange": resolved_exchange,
             "symbol": resolved_symbol,
             "action": leg_data.get("action"),
-            "quantity": leg_data.get("quantity"),
+            "quantity": total_quantity,
             "pricetype": leg_data.get("pricetype", "MARKET"),
             "product": leg_data.get("product", "MIS"),
             "price": leg_data.get("price", 0.0),
@@ -339,6 +429,51 @@ def resolve_and_place_leg(
             "disclosed_quantity": leg_data.get("disclosed_quantity", 0),
             "underlying_ltp": underlying_ltp,  # Pass LTP for execution reference
         }
+        if evaluate_exposure:
+            ok, reason, meta = evaluate_exposure(
+                strategy_id=str(common_data.get("strategy") or "optionsmultiorder"),
+                segment=resolved_exchange,
+                intended_trade={
+                    "symbol": resolved_symbol,
+                    "exchange": resolved_exchange,
+                    "quantity": total_quantity,
+                },
+            )
+            if not ok:
+                return {
+                    "leg": leg_index + 1,
+                    "symbol": resolved_symbol,
+                    "exchange": resolved_exchange,
+                    "offset": leg_data.get("offset"),
+                    "option_type": leg_data.get("option_type", "").upper(),
+                    "action": leg_data.get("action", "").upper(),
+                    "status": "error",
+                    "message": f"Exposure blocked: {reason}",
+                    "meta": meta,
+                }
+
+        if get_agent_client and DecisionRequest:
+            try:
+                req = DecisionRequest(
+                    segment=resolved_exchange,
+                    strategy_id=str(common_data.get("strategy") or "optionsmultiorder"),
+                    symbol=str(resolved_symbol),
+                    features={"spread_bps": 0.0, "price_type": order_data["pricetype"]},
+                    context={"leg": leg_index + 1},
+                    constraints={"guardrails_enabled": True},
+                )
+                d = get_agent_client().decide(
+                    route="/v1/decision/execution-style",
+                    request=req,
+                    fallback_decision="ROUTE",
+                    confidence_override_required=True,
+                )
+                if not d.fallback_required and isinstance(d.params, dict):
+                    style = str(d.params.get("order_style", "")).upper()
+                    if style in ("MARKET", "LIMIT", "SL", "SL-M"):
+                        order_data["pricetype"] = style
+            except Exception:
+                pass
 
         # Step 3: Place the order
         # Pass emit_event=False to suppress per-leg socket events

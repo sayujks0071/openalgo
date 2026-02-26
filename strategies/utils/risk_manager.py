@@ -25,6 +25,12 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import pytz
+try:
+    from agent import get_agent_client
+    from agent.schemas import DecisionRequest
+except Exception:
+    get_agent_client = None
+    DecisionRequest = None
 
 logger = logging.getLogger("RiskManager")
 
@@ -151,6 +157,36 @@ class RiskManager:
         if time_since_last < self.config['trade_cooldown_seconds']:
             remaining = int(self.config['trade_cooldown_seconds'] - time_since_last)
             return False, f"Trade cooldown active - {remaining}s remaining"
+
+        # Agent risk sentinel (fail-closed + deterministic fallback)
+        if get_agent_client and DecisionRequest:
+            try:
+                client = get_agent_client()
+                req = DecisionRequest(
+                    segment=self.exchange,
+                    strategy_id=self.strategy_name,
+                    symbol="*",
+                    features={
+                        "daily_loss_abs": abs(self.daily_pnl) if self.daily_pnl < 0 else 0.0,
+                        "max_daily_loss_abs": self.capital * (self.config['max_daily_loss_pct'] / 100),
+                        "rejection_rate": 0.0,
+                    },
+                    context={"positions_count": len(self.positions)},
+                    constraints={"guardrails_enabled": True},
+                )
+                decision = client.decide(
+                    route="/v1/decision/risk-sentinel",
+                    request=req,
+                    fallback_decision="ALLOW",
+                    confidence_override_required=False,
+                )
+                if decision.decision in ("PAUSE", "FLATTEN"):
+                    # FLATTEN still needs deterministic breach confirmation.
+                    deterministic_breach = self.daily_pnl <= -max_daily_loss
+                    if decision.decision == "PAUSE" or deterministic_breach:
+                        return False, f"Agent risk sentinel: {decision.decision}"
+            except Exception as exc:
+                logger.debug(f"Agent risk sentinel failed: {exc}")
 
         return True, "OK"
 

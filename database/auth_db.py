@@ -244,6 +244,7 @@ def upsert_auth(name, auth_token, broker, feed_token=None, user_id=None, revoke=
     # This notifies WebSocket proxy and other processes to clear their stale caches
     try:
         from database.cache_invalidation import publish_all_cache_invalidation
+
         publish_all_cache_invalidation(name)
         logger.debug(f"Published cache invalidation for user: {name}")
     except Exception as e:
@@ -520,12 +521,17 @@ def verify_api_key(provided_api_key):
         # Try to verify against each stored hash
         for api_key_obj in api_keys:
             try:
+                logger.info(f"DEBUG: Checking key against user {api_key_obj.user_id}")
+                logger.info(f"DEBUG: PEPPER from env used: {repr(PEPPER)}")
+                logger.info(f"DEBUG: Provided Key starts with: {provided_api_key[:5]}")
                 ph.verify(api_key_obj.api_key_hash, peppered_key)
                 # Valid key found - cache it
                 verified_api_key_cache[cache_key] = api_key_obj.user_id
                 logger.debug(f"API key verified and cached for user_id: {api_key_obj.user_id}")
                 return api_key_obj.user_id
-            except VerifyMismatchError:
+            except Exception as e:
+                logger.error(f"DEBUG: Verify failed for user {api_key_obj.user_id}: {e}")
+                # Catch VerifyMismatchError (auth fail) and InvalidHashError (bad DB data)
                 continue
 
         # If we reach here, the API key is invalid

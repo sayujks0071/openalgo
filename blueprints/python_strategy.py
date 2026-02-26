@@ -206,6 +206,7 @@ def load_configs():
             with open(CONFIG_FILE, encoding="utf-8") as f:
                 STRATEGY_CONFIGS = json.load(f)
             logger.debug(f"Loaded {len(STRATEGY_CONFIGS)} strategy configurations")
+            mark_missing_strategy_files()
         except Exception as e:
             logger.exception(f"Failed to load configs: {e}")
             STRATEGY_CONFIGS = {}
@@ -220,6 +221,55 @@ def save_configs():
         logger.debug("Configurations saved")
     except Exception as e:
         logger.exception(f"Failed to save configs: {e}")
+
+
+def mark_missing_strategy_files():
+    """
+    Mark configs whose underlying strategy files are missing.
+
+    This prevents "ghost" strategies from looking healthy in the UI after
+    files were removed manually or failed uploads left stale config entries.
+    """
+    updated = False
+    for strategy_id, config in list(STRATEGY_CONFIGS.items()):
+        if not isinstance(config, dict):
+            continue
+
+        file_path_raw = config.get("file_path")
+        if not file_path_raw:
+            continue
+
+        try:
+            file_path = Path(file_path_raw)
+        except Exception:
+            continue
+
+        if file_path.exists():
+            # Clear stale missing-file error if file is back.
+            if config.get("is_error") and config.get("error_code") == "MISSING_FILE":
+                config.pop("is_error", None)
+                config.pop("error_code", None)
+                config.pop("error_message", None)
+                config.pop("error_time", None)
+                updated = True
+            continue
+
+        missing_msg = f"Strategy file missing: {file_path}"
+        if (
+            config.get("is_error") is not True
+            or config.get("error_code") != "MISSING_FILE"
+            or config.get("error_message") != missing_msg
+        ):
+            config["is_running"] = False
+            config["pid"] = None
+            config["is_error"] = True
+            config["error_code"] = "MISSING_FILE"
+            config["error_message"] = missing_msg
+            config["error_time"] = get_ist_time().isoformat()
+            updated = True
+
+    if updated:
+        save_configs()
 
 
 def verify_strategy_ownership(strategy_id, user_id, return_config=False):
@@ -1476,6 +1526,7 @@ def index():
     """Main dashboard"""
     # Ensure initialization is done when first accessed
     initialize_with_app_context()
+    mark_missing_strategy_files()
     cleanup_dead_processes()
 
     strategies = []
@@ -1684,6 +1735,16 @@ def start_strategy(strategy_id):
     if not is_owner:
         return error_response
 
+    # Force-start allows manual execution outside schedule/day windows.
+    # Accepts JSON or form payload: force=true / force_start=true.
+    payload = request.get_json(silent=True) or {}
+    force_raw = payload.get("force")
+    if force_raw is None:
+        force_raw = payload.get("force_start")
+    if force_raw is None:
+        force_raw = request.form.get("force") or request.args.get("force")
+    force_start = str(force_raw).lower() in {"1", "true", "yes", "on"}
+
     # Check if scheduler is enabled - auto-enable with defaults for old strategies
     config = STRATEGY_CONFIGS.get(strategy_id, {})
     if not config.get("is_scheduled"):
@@ -1740,8 +1801,22 @@ def start_strategy(strategy_id):
     # Check if today is a market holiday (but allow weekends if scheduled)
     is_holiday = not is_trading_day() and now.weekday() < 5
 
-    # If outside schedule (wrong day, wrong time, or holiday), just arm it for scheduled start
+    # If outside schedule (wrong day, wrong time, or holiday), either arm for later
+    # or run immediately when force_start is requested.
     if not is_scheduled_day or not is_within_hours or is_holiday:
+        if force_start:
+            initialize_with_app_context()
+            success, message = start_strategy_process(strategy_id)
+            if success:
+                return jsonify(
+                    {
+                        "status": "success",
+                        "message": f"Force-started strategy outside schedule: {message}",
+                        "data": {"force_started": True},
+                    }
+                )
+            return jsonify({"status": "error", "message": message}), 400
+
         # Determine the reason and next start time
         if is_holiday:
             reason = "Market holiday"
@@ -2188,6 +2263,7 @@ def get_schedule_status(config):
 @check_session_validity
 def api_get_strategies():
     """API: Get all strategies as JSON"""
+    mark_missing_strategy_files()
     cleanup_dead_processes()
     strategies = []
 

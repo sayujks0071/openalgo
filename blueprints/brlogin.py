@@ -33,6 +33,15 @@ def ratelimit_handler(e):
     return jsonify(error="Rate limit exceeded"), 429
 
 
+@brlogin_bp.route("/callback", methods=["POST", "GET"])
+def root_callback():
+    """Redirect bare /callback to /dhan/callback preserving query string."""
+    qs = request.query_string.decode()
+    target = f"/dhan/callback?{qs}" if qs else "/dhan/callback"
+    logger.info(f"Root /callback redirect → {target}")
+    return redirect(target, code=302)
+
+
 @brlogin_bp.route("/<broker>/callback", methods=["POST", "GET"])
 @limiter.limit(LOGIN_RATE_LIMIT_MIN)
 @limiter.limit(LOGIN_RATE_LIMIT_HOUR)
@@ -68,8 +77,9 @@ def broker_callback(broker, para=None):
     if not auth_function:
         return jsonify(error="Broker authentication function not found."), 404
 
-    # Initialize feed_token to None by default
+    # Initialize feed_token and user_id to None by default
     feed_token = None
+    user_id = None
 
     if broker == "fivepaisa":
         if request.method == "GET":

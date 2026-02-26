@@ -1,4 +1,9 @@
 # Load and check environment variables before anything else
+import os
+
+os.environ["NUMBA_DISABLE_JIT"] = "1"
+os.environ["NUMBA_CACHE_DIR"] = "/tmp/numba_cache"
+
 from utils.env_check import load_and_check_env_variables  # Import the environment check function
 
 load_and_check_env_variables()
@@ -17,6 +22,9 @@ mimetypes.add_type("application/font-woff2", ".woff2")
 
 # Initialize logging EARLY to suppress verbose startup logs
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from flask import Flask, session
 from flask_wtf.csrf import CSRFProtect  # Import CSRF protection
@@ -42,6 +50,7 @@ from blueprints.ivchart import ivchart_bp  # Import the IV chart blueprint
 from blueprints.oitracker import oitracker_bp  # Import the OI tracker blueprint
 from blueprints.straddle_chart import straddle_bp  # Import the straddle chart blueprint
 from blueprints.vol_surface import vol_surface_bp  # Import the vol surface blueprint
+from blueprints.backtest_api import backtest_api_bp  # Import the backtest API blueprint
 from blueprints.latency import latency_bp  # Import the latency blueprint
 from blueprints.health import health_bp  # Import the health monitoring blueprint
 from blueprints.log import log_bp
@@ -53,7 +62,10 @@ from blueprints.orders import orders_bp
 from blueprints.platforms import platforms_bp
 from blueprints.playground import playground_bp  # Import the API playground blueprint
 from blueprints.pnltracker import pnltracker_bp  # Import the pnl tracker blueprint
-from blueprints.python_strategy import python_strategy_bp, initialize_with_app_context as init_python_strategy  # Import the python strategy blueprint
+from blueprints.python_strategy import (
+    python_strategy_bp,
+    initialize_with_app_context as init_python_strategy,
+)  # Import the python strategy blueprint
 from blueprints.react_app import (  # Import React frontend blueprint
     is_react_frontend_available,
     react_bp,
@@ -75,6 +87,7 @@ from cors import cors  # Import the CORS instance
 from csp import apply_csp_middleware  # Import the CSP middleware
 from database.action_center_db import init_db as ensure_action_center_tables_exists
 from database.analyzer_db import init_db as ensure_analyzer_tables_exists
+from database.agent_db import init_db as ensure_agent_tables_exists
 from database.apilog_db import init_db as ensure_api_log_tables_exists
 from database.auth_db import init_db as ensure_auth_tables_exists
 from database.chartink_db import init_db as ensure_chartink_tables_exists
@@ -182,7 +195,9 @@ def create_app():
     app.jinja_env.filters["indian_number"] = format_indian_number
 
     # Environment variables
-    app.secret_key = os.getenv("APP_KEY")
+    app.secret_key = (
+        os.getenv("APP_KEY") or "13e7a07349134d1e5396c41a75819e829ca1ab864cef0af1839029b20fd523e3"
+    )
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 
     # Dynamic cookie security configuration based on HOST_SERVER
@@ -199,9 +214,14 @@ def create_app():
         # PERMANENT_SESSION_LIFETIME is dynamically set at login to expire at 3:30 AM IST
     )
 
-    # Add cookie prefix for HTTPS environments
-    if USE_HTTPS:
+    # Add cookie prefix for HTTPS environments (skip on localhost to allow Chrome to accept cookies)
+    FLASK_HOST = os.getenv("FLASK_HOST_IP", "127.0.0.1")
+    IS_LOCALHOST = FLASK_HOST in ("127.0.0.1", "localhost")
+    if USE_HTTPS and not IS_LOCALHOST:
         app.config["SESSION_COOKIE_NAME"] = f"__Secure-{session_cookie_name}"
+        app.config["SESSION_COOKIE_SECURE"] = True
+    else:
+        app.config["SESSION_COOKIE_SECURE"] = False
 
     # CSRF configuration from environment variables
     csrf_enabled = os.getenv("CSRF_ENABLED", "TRUE").upper() == "TRUE"
@@ -212,12 +232,12 @@ def create_app():
     app.config.update(
         WTF_CSRF_COOKIE_HTTPONLY=True,
         WTF_CSRF_COOKIE_SAMESITE="Lax",
-        WTF_CSRF_COOKIE_SECURE=USE_HTTPS,
+        WTF_CSRF_COOKIE_SECURE=USE_HTTPS and not IS_LOCALHOST,
         WTF_CSRF_COOKIE_NAME=csrf_cookie_name,
     )
 
-    # Add cookie prefix for CSRF token in HTTPS environments
-    if USE_HTTPS:
+    # Add cookie prefix for CSRF token in HTTPS environments (skip on localhost)
+    if USE_HTTPS and not IS_LOCALHOST:
         app.config["WTF_CSRF_COOKIE_NAME"] = f"__Secure-{csrf_cookie_name}"
 
     # Parse CSRF time limit from environment
@@ -243,6 +263,7 @@ def create_app():
 
     # Exempt API endpoints from CSRF protection (they use API key authentication)
     csrf.exempt(api_v1_bp)
+    csrf.exempt(backtest_api_bp)  # Backtest API uses X-API-KEY header auth
 
     # Initialize security middleware before traffic logging
     init_security_middleware(app)
@@ -285,6 +306,7 @@ def create_app():
     app.register_blueprint(straddle_bp)  # Register straddle chart blueprint
     app.register_blueprint(vol_surface_bp)  # Register vol surface blueprint
     app.register_blueprint(gex_bp)  # Register GEX blueprint
+    app.register_blueprint(backtest_api_bp)  # Register backtest API blueprint
     app.register_blueprint(ivsmile_bp)  # Register IV Smile blueprint
     app.register_blueprint(oiprofile_bp)  # Register OI Profile blueprint
     app.register_blueprint(flow_bp)  # Register Flow blueprint
@@ -527,6 +549,7 @@ def setup_environment(app):
         from database.qty_freeze_db import ensure_qty_freeze_tables_exists
 
         db_init_functions = [
+            ("Agent DB", ensure_agent_tables_exists),
             ("Auth DB", ensure_auth_tables_exists),
             ("User DB", ensure_user_tables_exists),
             ("Master Contract DB", ensure_master_contract_tables_exists),
@@ -616,6 +639,32 @@ with app.app_context():
     except Exception as e:
         logger.debug(f"Cache restoration skipped: {e}")
 
+# Ensure master contract is ready after cache restoration
+# This fixes the issue where container restarts lose the in-memory cache
+with app.app_context():
+    try:
+        from database.master_contract_startup import (
+            ensure_master_contract_ready,
+            log_master_contract_status,
+        )
+
+        # Check and load master contract if needed
+        mc_result = ensure_master_contract_ready()
+
+        if mc_result["success"]:
+            logger.info(
+                f"Master contract verified: {mc_result['symbols_in_cache']} symbols ready "
+                f"(took {mc_result['time_ms']:.0f}ms)"
+            )
+        elif mc_result["error"]:
+            logger.warning(f"Master contract check: {mc_result['error']}")
+
+        # Log detailed status for debugging
+        log_master_contract_status()
+
+    except Exception as e:
+        logger.error(f"Master contract startup check failed: {e}")
+
 # Auto-start execution engine and squareoff scheduler if in analyzer mode (parallel startup)
 with app.app_context():
     try:
@@ -687,36 +736,42 @@ with app.app_context():
     except Exception as e:
         logger.error(f"Error starting strategy watchdog: {e}")
 
+
 # Database session cleanup (teardown handler)
 @app.teardown_appcontext
 def shutdown_database_sessions(exception=None):
     """Remove scoped sessions after each request to prevent FD leaks"""
     try:
         from database.auth_db import db_session
+
         db_session.remove()
     except Exception as e:
         logger.error(f"Error removing auth db_session: {e}")
 
     try:
         from database.traffic_db import logs_session
+
         logs_session.remove()
     except Exception as e:
         logger.error(f"Error removing logs_session: {e}")
 
     try:
         from database.apilog_db import db_session as apilog_session
+
         apilog_session.remove()
     except Exception as e:
         logger.error(f"Error removing apilog_session: {e}")
 
     try:
         from database.latency_db import latency_session
+
         latency_session.remove()
     except Exception as e:
         logger.error(f"Error removing latency_session: {e}")
 
     try:
         from database.health_db import health_session
+
         health_session.remove()
     except Exception as e:
         logger.error(f"Error removing health_session: {e}")

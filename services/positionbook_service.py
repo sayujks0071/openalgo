@@ -1,8 +1,10 @@
 import importlib
+import time
 import traceback
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from database.auth_db import get_auth_token_broker
+from database.agent_db import log_agent_incident
 from utils.logging import get_logger
 
 # Initialize logger
@@ -113,8 +115,17 @@ def get_positionbook_with_auth(
         return False, {"status": "error", "message": "Broker-specific module not found"}, 404
 
     try:
-        # Get positions data using broker's implementation
-        positions_data = broker_funcs["get_positions"](auth_token)
+        # Get positions data using broker's implementation (idempotent retry on transient failures)
+        positions_data = None
+        for attempt in range(1, 3):
+            try:
+                positions_data = broker_funcs["get_positions"](auth_token)
+                break
+            except Exception:
+                if attempt < 2:
+                    time.sleep(0.2)
+                    continue
+                raise
 
         if "status" in positions_data and positions_data["status"] == "error":
             return (
@@ -136,6 +147,16 @@ def get_positionbook_with_auth(
         return True, {"status": "success", "data": formatted_positions}, 200
     except Exception as e:
         logger.error(f"Error processing positions data: {e}")
+        log_agent_incident(
+            request_id="",
+            strategy_id="positionbook_service",
+            segment="BROKER",
+            symbol="",
+            incident_type="BROKER_POSITIONBOOK_ERROR",
+            severity="medium",
+            message=str(e),
+            route="/api/v1/positionbook",
+        )
         traceback.print_exc()
         return False, {"status": "error", "message": str(e)}, 500
 

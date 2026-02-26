@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import sys
 import time
 import time as time_module
 from datetime import datetime
@@ -15,7 +16,15 @@ import numpy as np
 import pandas as pd
 import pytz
 
-from utils import httpx_client
+try:
+    from utils import httpx_client
+except ImportError:
+    # Strategy scripts are often executed directly, where sys.path[0] points to
+    # strategies/scripts. In that mode, top-level `utils` is not importable.
+    app_root = Path(__file__).resolve().parents[2]
+    if str(app_root) not in sys.path:
+        sys.path.insert(0, str(app_root))
+    from utils import httpx_client
 
 # Configure logging
 try:
@@ -88,6 +97,30 @@ def is_market_open(exchange="NSE"):
     current_time = now.time()
 
     return market_start <= current_time <= market_end
+
+
+def should_force_trade(start_ts, last_trade_ts=None):
+    """
+    Optional forced-trade hook used by some strategy scripts.
+    Defaults to disabled unless explicitly enabled via environment flags.
+    """
+    force_enabled = os.getenv("FORCE_TRADE", "false").lower() in ("1", "true", "yes")
+    if not force_enabled:
+        return False
+
+    now = time_module.time()
+
+    # Force one bootstrap trade after startup grace period if no trades yet.
+    startup_grace_sec = int(os.getenv("FORCE_TRADE_STARTUP_SECONDS", "300"))
+    if last_trade_ts is None and (now - float(start_ts or now)) >= startup_grace_sec:
+        return True
+
+    # Force a trade if strategy stayed idle for too long.
+    idle_sec = int(os.getenv("FORCE_TRADE_IDLE_SECONDS", "1800"))
+    if last_trade_ts is not None and (now - float(last_trade_ts)) >= idle_sec:
+        return True
+
+    return False
 
 
 def calculate_intraday_vwap(df):
@@ -271,8 +304,14 @@ class PositionManager:
     Saves state to openalgo/strategies/state/{symbol}_state.json
     """
 
-    def __init__(self, symbol):
+    def __init__(self, symbol, exchange=None, product="MIS", quantity=1, api_key=None, host="http://127.0.0.1:5002", strategy=None, **kwargs):
         self.symbol = symbol
+        self.exchange = exchange
+        self.product = product
+        self.quantity = quantity
+        self.api_key = api_key
+        self.host = host
+        self.strategy = strategy
         # Determine state directory relative to this file
         # this file: openalgo/strategies/utils/trading_utils.py
         # target: openalgo/strategies/state/
@@ -284,6 +323,7 @@ class PositionManager:
         self.entry_price = 0.0
         self.pnl = 0.0
 
+        self.client = APIClient(api_key=api_key, host=host) if api_key else None
         self.load_state()
 
     def load_state(self):
@@ -394,6 +434,9 @@ class PositionManager:
 
     def has_position(self):
         return self.position != 0
+
+    def get_net_position(self):
+        return self.position
 
     def get_pnl(self, current_price):
         """Calculate Unrealized PnL."""
@@ -534,6 +577,8 @@ class APIClient:
         self.cache = FileCache()
         self.quote_cache = {}  # Key: symbol, Value: (timestamp, data)
         self.quote_ttl = 1.0   # 1 second TTL
+        self.quote_timeout = float(os.getenv("OA_QUOTE_TIMEOUT_SEC", "4"))
+        self.quote_default_retries = int(os.getenv("OA_QUOTE_RETRIES", "1"))
 
     @lru_cache(maxsize=128)
     def history(
@@ -626,7 +671,7 @@ class APIClient:
 
         return pd.DataFrame()
 
-    def get_quote(self, symbol, exchange="NSE", max_retries=3):
+    def get_quote(self, symbol, exchange="NSE", max_retries=None):
         """
         Fetch real-time quote from Kite API via OpenAlgo.
         Supports single symbol or list of symbols (batch request).
@@ -652,11 +697,14 @@ class APIClient:
         url = f"{self.host}/api/v1/quotes"
         payload = {"symbol": symbol, "exchange": exchange, "apikey": self.api_key}
 
+        if max_retries is None:
+            max_retries = self.quote_default_retries
+
         try:
             response = httpx_client.post(
                 url,
                 json=payload,
-                timeout=10,
+                timeout=self.quote_timeout,
                 max_retries=max_retries,
                 backoff_factor=1.0,
             )
@@ -742,14 +790,19 @@ class APIClient:
         symbol,
         action,
         exchange,
-        price_type,
-        product,
-        quantity,
-        position_size,
+        price_type=None,
+        product="MIS",
+        quantity=1,
+        position_size=1,
+        pricetype=None,
+        price=None,
+        max_retries=3,
     ):
         """Place smart order"""
         # Correct endpoint is /api/v1/placesmartorder (not /api/v1/smartorder)
         url = f"{self.host}/api/v1/placesmartorder"
+        effective_price_type = pricetype or price_type or "MARKET"
+        effective_price = "0" if price is None else str(price)
 
         payload = {
             "apikey": self.api_key,
@@ -757,11 +810,11 @@ class APIClient:
             "symbol": symbol,
             "action": action,  # Fixed: was "transaction_type"
             "exchange": exchange,
-            "pricetype": price_type,  # Fixed: was "order_type"
+            "pricetype": effective_price_type,  # Fixed: was "order_type"
             "product": product,
             "quantity": str(quantity),  # API expects string
             "position_size": str(position_size),  # API expects string
-            "price": "0",
+            "price": effective_price,
             "trigger_price": "0",
             "disclosed_quantity": "0",
         }
@@ -769,7 +822,7 @@ class APIClient:
         try:
             # Use shared client with retry logic
             response = httpx_client.post(
-                url, json=payload, timeout=10, max_retries=3, backoff_factor=1.0
+                url, json=payload, timeout=10, max_retries=max_retries, backoff_factor=1.0
             )
 
             if response.status_code == 200:
@@ -794,6 +847,11 @@ class APIClient:
                 logger.error(
                     f"Order Failed (HTTP {response.status_code}): {error_text}"
                 )
+                # Aggressive live fallback: try regular placeorder if smartorder fails.
+                # This keeps entry flow active when broker smart-order path is unstable.
+                fallback = self._fallback_placeorder(payload, max_retries=max_retries)
+                if fallback and str(fallback.get("status", "")).lower() == "success":
+                    return fallback
                 return {
                     "status": "error",
                     "message": f"HTTP {response.status_code}: {error_text}",
@@ -803,6 +861,132 @@ class APIClient:
             import traceback
 
             logger.debug(traceback.format_exc())
+            fallback = self._fallback_placeorder(payload, max_retries=max_retries)
+            if fallback and str(fallback.get("status", "")).lower() == "success":
+                return fallback
+            return {"status": "error", "message": str(e)}
+
+    def placeorder(
+        self,
+        strategy,
+        symbol,
+        action,
+        exchange,
+        price_type=None,
+        product="MIS",
+        quantity=1,
+        pricetype=None,
+        price=None,
+        max_retries=3,
+    ):
+        """Place direct order (non-smart) for aggressive incremental entries."""
+        url = f"{self.host}/api/v1/placeorder"
+        effective_price_type = pricetype or price_type or "MARKET"
+        effective_price = "0" if price is None else str(price)
+        payload = {
+            "apikey": self.api_key,
+            "strategy": strategy,
+            "symbol": symbol,
+            "action": action,
+            "exchange": exchange,
+            "pricetype": effective_price_type,
+            "product": product,
+            "quantity": str(quantity),
+            "price": effective_price,
+            "trigger_price": "0",
+            "disclosed_quantity": "0",
+        }
+        try:
+            response = httpx_client.post(
+                url,
+                json=payload,
+                timeout=10,
+                max_retries=max_retries,
+                backoff_factor=1.0,
+            )
+            if response.status_code == 200:
+                try:
+                    data = response.json()
+                except ValueError:
+                    data = {"status": "success", "message": "Direct placeorder success"}
+                logger.info(f"[ENTRY][DIRECT] {data}")
+                return data
+            err = response.text[:500] if response.text else "(empty)"
+            logger.error(f"Direct placeorder failed (HTTP {response.status_code}): {err}")
+            return {"status": "error", "message": f"HTTP {response.status_code}: {err}"}
+        except Exception as e:
+            logger.error(f"Direct placeorder error: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def _fallback_placeorder(self, smart_payload, max_retries=2):
+        """Fallback path: submit direct placeorder when smartorder fails."""
+        try:
+            url = f"{self.host}/api/v1/placeorder"
+            place_payload = {
+                "apikey": smart_payload.get("apikey"),
+                "strategy": smart_payload.get("strategy", "FallbackPlaceOrder"),
+                "symbol": smart_payload.get("symbol"),
+                "action": smart_payload.get("action"),
+                "exchange": smart_payload.get("exchange"),
+                "pricetype": smart_payload.get("pricetype", "MARKET"),
+                "product": smart_payload.get("product", "MIS"),
+                "quantity": str(smart_payload.get("quantity", "1")),
+                "price": smart_payload.get("price", "0"),
+                "trigger_price": smart_payload.get("trigger_price", "0"),
+                "disclosed_quantity": smart_payload.get("disclosed_quantity", "0"),
+            }
+            logger.warning(
+                f"Smartorder fallback active -> placeorder for {place_payload.get('symbol')}"
+            )
+            response = httpx_client.post(
+                url,
+                json=place_payload,
+                timeout=10,
+                max_retries=max_retries,
+                backoff_factor=1.0,
+            )
+            if response.status_code == 200:
+                try:
+                    data = response.json()
+                except ValueError:
+                    data = {"status": "success", "message": "Fallback placeorder success"}
+                logger.info(f"[ENTRY][FALLBACK] {data}")
+                return data
+            err = response.text[:500] if response.text else "(empty)"
+            logger.error(f"Fallback placeorder failed (HTTP {response.status_code}): {err}")
+            return {"status": "error", "message": f"fallback HTTP {response.status_code}: {err}"}
+        except Exception as e:
+            logger.error(f"Fallback placeorder error: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def orderbook(self, max_retries=3):
+        """Fetch orderbook details."""
+        url = f"{self.host}/api/v1/orderbook"
+        payload = {"apikey": self.api_key}
+        try:
+            response = httpx_client.post(
+                url, json=payload, timeout=10, max_retries=max_retries, backoff_factor=1.0
+            )
+            if response.status_code == 200:
+                return response.json()
+            return {"status": "error", "message": f"HTTP {response.status_code}: {response.text[:300]}"}
+        except Exception as e:
+            logger.error(f"Orderbook API Error: {e}")
+            return {"status": "error", "message": str(e)}
+
+    def positionbook(self, max_retries=3):
+        """Fetch positionbook details."""
+        url = f"{self.host}/api/v1/positionbook"
+        payload = {"apikey": self.api_key}
+        try:
+            response = httpx_client.post(
+                url, json=payload, timeout=10, max_retries=max_retries, backoff_factor=1.0
+            )
+            if response.status_code == 200:
+                return response.json()
+            return {"status": "error", "message": f"HTTP {response.status_code}: {response.text[:300]}"}
+        except Exception as e:
+            logger.error(f"Positionbook API Error: {e}")
             return {"status": "error", "message": str(e)}
 
     def get_option_chain(self, symbol, exchange="NFO", max_retries=3):

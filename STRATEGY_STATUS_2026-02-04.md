@@ -1511,3 +1511,1396 @@ Log tails (last 5 lines):
 
 `log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log`
 - Missing: /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+
+----
+## Snapshot - 2026-02-14 00:31:38 IST
+
+Processes:
+- Unable to list running processes (ps/pgrep blocked in sandbox)
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: MISSING
+- live_banknifty.log: MISSING
+- live_nifty.log: MISSING
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+----
+## Snapshot - 2026-02-14 01:31:36 IST
+
+Processes (PID / uptime / command):
+- Missing: unable to list processes (`ps` not permitted in sandbox).
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: MISSING
+- live_banknifty.log: MISSING
+- live_nifty.log: MISSING
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+----
+## Snapshot - 2026-02-14 02:31:44 IST
+
+Processes (PID / uptime / command):
+- Missing: unable to list processes (`ps` not permitted in sandbox).
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: MISSING
+- live_banknifty.log: MISSING
+- live_nifty.log: MISSING
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+----
+## Snapshot - 2026-02-14 03:31:39 IST
+
+Processes (PID / uptime / command):
+- Missing: unable to list processes (`ps` not permitted in sandbox).
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: MISSING
+- live_banknifty.log: MISSING
+- live_nifty.log: MISSING
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+---
+Snapshot: 2026-02-14 04:31:57 IST (2026-02-13 23:01:57 UTC)
+
+Processes
+- Unable to list processes (sandbox/system restriction: ps/pgrep blocked).
+
+Logs (last 5 lines)
+- live_ai_hybrid.log: MISSING
+- live_banknifty.log: MISSING
+- live_nifty.log: MISSING
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+---
+Snapshot: 2026-02-14 05:32:16 IST
+
+Processes (strategy scripts):
+- process list unavailable (ps blocked by sandbox)
+
+Log: /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+- missing
+
+Log: /Users/mac/openalgo/openalgo/live_banknifty.log
+- missing
+
+Log: /Users/mac/openalgo/openalgo/live_nifty.log
+- missing
+
+Log: /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+- missing
+
+
+---
+Snapshot at 2026-02-14 06:31:55 IST
+
+Processes (PIDs + uptimes):
+- Unavailable: `ps` not permitted in sandbox.
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+----
+Snapshot: 2026-02-14 07:31:44 IST
+
+Processes (PIDs + uptimes for strategy scripts):
+- Unavailable: process list access blocked (ps/pgrep not permitted in sandbox).
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+---
+Snapshot: 2026-02-14 08:31:55 IST
+
+Processes (PIDs + uptimes for strategy scripts):
+- Unavailable: process list access blocked (`ps` not permitted in sandbox).
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+---
+Snapshot: 2026-02-14 09:31:46 IST
+
+Processes (PIDs + uptimes for strategy scripts):
+- Unavailable: process list access blocked (`ps` not permitted in sandbox).
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+---
+Snapshot: 2026-02-14 10:31:55 IST
+
+Processes (PIDs + uptimes for strategy scripts):
+- Unavailable: process list access blocked (`ps` not permitted in sandbox).
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+
+## Snapshot - 2026-02-14 11:31:50 IST
+
+### Processes
+- Unable to list strategy processes: `ps` blocked by sandbox (operation not permitted).
+
+### Logs (last 5 lines)
+- `/Users/mac/openalgo/openalgo/live_ai_hybrid.log`: missing
+- `/Users/mac/openalgo/openalgo/live_banknifty.log`: missing
+- `/Users/mac/openalgo/openalgo/live_nifty.log`: missing
+- `/Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log`: missing
+
+---
+Snapshot: 2026-02-14 12:31:58 IST
+
+Processes (strategy scripts):
+- Process list unavailable: ps blocked by sandbox (operation not permitted).
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: MISSING
+- live_banknifty.log: MISSING
+- live_nifty.log: MISSING
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+---
+
+## Snapshot 2026-02-14 13:31:47 IST
+
+### Strategy Processes
+- Process list unavailable: `ps` blocked by sandbox (`operation not permitted`).
+
+### Logs (last 5 lines)
+- Missing: `/Users/mac/openalgo/openalgo/live_ai_hybrid.log`
+- Missing: `/Users/mac/openalgo/openalgo/live_banknifty.log`
+- Missing: `/Users/mac/openalgo/openalgo/live_nifty.log`
+- Missing: `/Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log`
+---
+
+## Snapshot 2026-02-14 14:31:50 IST
+
+### Strategy Processes
+- Process list unavailable: `ps` blocked by sandbox (`operation not permitted`).
+
+### Logs (last 5 lines)
+- Missing: `/Users/mac/openalgo/openalgo/live_ai_hybrid.log`
+- Missing: `/Users/mac/openalgo/openalgo/live_banknifty.log`
+- Missing: `/Users/mac/openalgo/openalgo/live_nifty.log`
+- Missing: `/Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log`
+
+---
+### Snapshot 2026-02-16 00:09:00 IST
+Processes (strategy scripts):
+- Unable to list processes: `ps` blocked by sandbox (operation not permitted).
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+### Snapshot 2026-02-16 01:09:16 IST
+Processes (strategy scripts):
+- Unable to list processes: `ps` blocked by sandbox (operation not permitted).
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+-----
+Timestamp (IST): 2026-02-16 02:10:24 IST
+
+Strategy processes (PID | Uptime | Command):
+- Unable to list processes (ps not permitted in sandbox).
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log: MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log: MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+---
+### Snapshot 2026-02-16 03:10:29 IST
+Processes (strategy scripts):
+- Unable to list processes: `ps` blocked by sandbox (operation not permitted).
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+-----
+Snapshot (IST): 2026-02-16 04:10:09 IST
+
+Strategy processes (PID/uptime):
+- ps unavailable (operation not permitted in sandbox)
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: missing
+- live_banknifty.log: missing
+- live_nifty.log: missing
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+
+Timestamp (IST): 2026-02-16 05:10:13 IST
+
+Strategy processes (PIDs + uptimes):
+- Unable to enumerate processes (sandbox denied access to process list).
+
+Log tails (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+---
+Snapshot (IST): 2026-02-16 06:10:26 IST
+
+Strategy processes (PIDs + uptimes):
+- Unable to enumerate processes (sandbox denied access to process list; `ps` not permitted).
+
+Log tails (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+------------------------------------------------------------
+Timestamp (IST): 2026-02-16 09:10:33 IST
+
+Strategy processes:
+(process list failed: Command '['bash', '-lc', 'ps -eo pid,etimes,command']' returned non-zero exit status 1.)
+
+Logs (last 5 lines):
+/Users/mac/openalgo/openalgo/live_ai_hybrid.log
+(MISSING)
+
+/Users/mac/openalgo/openalgo/live_banknifty.log
+(MISSING)
+
+/Users/mac/openalgo/openalgo/live_nifty.log
+(MISSING)
+
+/Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+(MISSING)
+
+---
+Timestamp (IST): 2026-02-16 10:10:22 IST
+
+Processes (strategy scripts):
+- Unable to list processes: `ps` not permitted in sandbox.
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log: MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log: MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+---
+
+Timestamp (IST): 2026-02-16 11:10:24 IST
+
+Strategy Processes (PID, Uptime):
+- Missing: process listing blocked by sandbox (`ps` operation not permitted).
+
+Log Tail (last 5 lines):
+- live_ai_hybrid.log: Missing (file not found).
+- live_banknifty.log: Missing (file not found).
+- live_nifty.log: Missing (file not found).
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: Missing (file not found).
+---
+Timestamp: 2026-02-16 12:10:43 IST
+
+Strategy processes (PID + uptime):
+- Unable to list processes: 'ps' is blocked in sandbox and 'pgrep' cannot access process list (sysmond missing).
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: MISSING
+- live_banknifty.log: MISSING
+- live_nifty.log: MISSING
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+
+---
+Timestamp (IST): 2026-02-16 13:10:12 IST
+
+Processes (strategy scripts):
+- Unable to list processes: `ps` not permitted; `pgrep` cannot access process list (sysmond missing). PIDs/uptimes unavailable.
+
+Logs (last 5 lines each):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log: MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log: MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+---
+2026-02-16 14:10:16 IST
+
+Strategy processes (PID / uptime):
+- Process listing unavailable: `ps` not permitted in sandbox.
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+Snapshot: 2026-02-16 15:10:33 IST
+
+Processes (strategy scripts):
+- Unable to list processes:  not permitted in this environment.
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log: MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log: MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+---
+Snapshot: 2026-02-16 15:10:46 IST
+
+Processes (strategy scripts):
+- Unable to list processes: `ps` not permitted in this environment.
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log: MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log: MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+---
+Timestamp (IST): 2026-02-16 16:10:12 IST
+
+Processes:
+- Unable to list processes: `ps` operation not permitted in sandbox.
+
+Logs (last 5 lines each):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+Timestamp (IST): 2026-02-16 18:03:22 IST
+
+Processes (strategy scripts):
+- Unable to list processes: `ps` operation not permitted in sandbox.
+
+Logs (last 5 lines each):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+Timestamp (IST): 2026-02-16 19:02:51 IST
+
+Processes (strategy scripts):
+- Unable to list processes: `ps` operation not permitted in sandbox.
+
+Logs (last 5 lines each):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+Timestamp (IST): 2026-02-16 20:02:39 IST
+
+Processes (strategy scripts):
+- Unable to list processes: `ps` operation not permitted in sandbox.
+
+Logs (last 5 lines each):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+Snapshot @ 2026-02-16 21:02:37 IST
+
+Processes (strategy scripts):
+- Unavailable: `ps` not permitted in sandbox; PIDs/uptimes not captured.
+
+Logs (last 5 lines each):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log: MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log: MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+---
+
+## Snapshot @ 2026-02-16 22:02:46 IST
+
+### Strategy Processes (PID / Uptime)
+- Unavailable: process listing blocked (ps/pgrep not permitted in this environment).
+
+### Logs (Last 5 Lines)
+
+`live_ai_hybrid.log`
+- Missing (file not found).
+
+`live_banknifty.log`
+- Missing (file not found).
+
+`live_nifty.log`
+- Missing (file not found).
+
+`log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log`
+- Missing (file not found).
+----
+Status Snapshot (2026-02-17 00:04:08 IST)
+
+Processes (strategy scripts):
+- Unable to list processes: 'ps' not permitted in this environment.
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log: MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log: MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+
+---
+Status Snapshot (2026-02-17 01:03:09 IST)
+
+Processes (strategy scripts):
+- Unable to list processes: 'ps' not permitted in this environment.
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log: MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log: MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+---
+## Snapshot 2026-02-17 02:03:08 IST
+
+### Strategy Processes
+Process listing unavailable: 'ps' not permitted in this environment.
+
+### Logs (last 5 lines)
+
+#### /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+Missing: file not found.
+
+#### /Users/mac/openalgo/openalgo/live_banknifty.log
+Missing: file not found.
+
+#### /Users/mac/openalgo/openalgo/live_nifty.log
+Missing: file not found.
+
+#### /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+Missing: file not found.
+
+
+---
+
+Timestamp (IST): 2026-02-17 03:02:49 IST
+
+Processes (strategy scripts):
+- (unavailable) process list access denied in sandbox; unable to report PIDs/uptimes
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: missing
+- live_banknifty.log: missing
+- live_nifty.log: missing
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+---
+## Snapshot 2026-02-17 04:03:00 IST
+
+### Strategy Processes
+Process listing unavailable in this environment (ps/pgrep blocked), so PIDs and uptimes could not be collected.
+
+### Logs (last 5 lines)
+
+#### /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+Missing: file not found.
+
+#### /Users/mac/openalgo/openalgo/live_banknifty.log
+Missing: file not found.
+
+#### /Users/mac/openalgo/openalgo/live_nifty.log
+Missing: file not found.
+
+#### /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+Missing: file not found.
+
+---
+## Snapshot 2026-02-17 05:02:57 IST
+
+### Strategy Processes
+Process listing unavailable in this environment (ps blocked), so PIDs and uptimes could not be collected.
+
+### Logs (last 5 lines)
+
+#### /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+Missing: file not found.
+
+#### /Users/mac/openalgo/openalgo/live_banknifty.log
+Missing: file not found.
+
+#### /Users/mac/openalgo/openalgo/live_nifty.log
+Missing: file not found.
+
+#### /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+Missing: file not found.
+
+---
+Timestamp (IST): 2026-02-17 06:03:24 IST
+
+Strategy processes (PID / uptime):
+- Unable to determine (ps not permitted in this environment).
+
+Log tails (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log: MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log: MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+---
+Timestamp (IST): 2026-02-17 07:03:23 IST
+
+Strategy processes (PID/uptime):
+- Unable to list processes: `ps` not permitted in sandbox.
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: missing
+- live_banknifty.log: missing
+- live_nifty.log: missing
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+---
+Timestamp (IST): 2026-02-17 08:03:22 IST
+
+Strategy processes (PID/uptime):
+- Unable to list processes: `ps` not permitted in sandbox.
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+Timestamp (IST): 2026-02-17 09:03:33 IST
+
+Strategy script processes (PID / uptime):
+- Unavailable (process listing blocked: `ps` not permitted in sandbox)
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: missing
+- live_banknifty.log: missing
+- live_nifty.log: missing
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+---
+Timestamp (IST): 2026-02-17 10:05:20 IST
+
+Strategy processes (PID / uptime):
+- Unavailable (process listing blocked: ps not permitted in sandbox).
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: missing
+- live_banknifty.log: missing
+- live_nifty.log: missing
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+---
+Timestamp (IST): 2026-02-17 11:03:38 IST
+
+Strategy processes (PID / uptime):
+- Unavailable (process listing blocked: `ps` not permitted in sandbox).
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+---
+Timestamp (IST): 2026-02-17 13:03:38 IST
+
+Strategy processes (PID / uptime):
+- Unable to list processes: `ps` not permitted in sandbox.
+
+Log tails (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log: MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log: MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+---
+
+Timestamp (IST): 2026-02-17 14:03:38 IST
+
+Strategy processes (PID / uptime):
+- Unavailable: process listing blocked (ps not permitted).
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: missing
+- live_banknifty.log: missing
+- live_nifty.log: missing
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+---
+Timestamp (IST): 2026-02-17 15:04:15 IST
+
+Strategy processes (PID / uptime):
+- Unavailable: process listing blocked (`ps` not permitted in sandbox).
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+\n---\n## Snapshot 2026-02-17 17:04:53 IST
+
+### Strategy Processes (PID / Uptime / Command)
+Process listing unavailable (ps blocked): zsh:10: operation not permitted: ps 
+
+### Log Tails (last 5 lines)
+
+#### /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+Missing log file.
+
+#### /Users/mac/openalgo/openalgo/live_banknifty.log
+Missing log file.
+
+#### /Users/mac/openalgo/openalgo/live_nifty.log
+Missing log file.
+
+#### /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+Missing log file.
+
+---
+Timestamp (IST): 2026-02-17 20:05:33 IST
+
+Strategy processes (PID / uptime):
+- Unavailable: process listing blocked (`ps` not permitted in sandbox).
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+**Snapshot:** 2026-02-17 21:06:12 IST
+
+**Strategy Processes (PID / Uptime / Command):**
+(process listing unavailable: zsh:8: operation not permitted: ps)
+
+**Recent Logs (last 5 lines):**
+
+### live_ai_hybrid.log
+(missing)
+
+
+### live_banknifty.log
+(missing)
+
+
+### live_nifty.log
+(missing)
+
+
+### AI_Hybrid_v1_RELIANCE_20260204.log
+(missing)
+
+
+---
+
+Timestamp (IST): 2026-02-17 21:06:23 IST
+
+Strategy processes (PID / uptime / command):
+- UNAVAILABLE (process listing blocked: ps not permitted)
+
+Logs (last 5 lines each):
+- live_ai_hybrid.log: MISSING
+- live_banknifty.log: MISSING
+- live_nifty.log: MISSING
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+---
+
+Timestamp (IST): 2026-02-17 21:06:49 IST
+
+Running strategy processes (PID / uptime / command):
+- Unable to list processes: OS permission denied for process listing (ps/pgrep blocked).
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+  - MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log
+  - MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log
+  - MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+  - MISSING
+---
+
+Timestamp (IST): 2026-02-17 22:07:04 IST
+
+Strategy processes (PID / uptime / command):
+- UNAVAILABLE (process listing blocked: ps not permitted)
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+  - MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log
+  - MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log
+  - MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+  - MISSING
+-----
+Snapshot @ 2026-02-17 22:08:02 IST
+
+Strategy process PIDs + uptimes (etimes seconds):
+Process listing unavailable: zsh:5: operation not permitted: ps
+
+Log missing: live_ai_hybrid.log
+
+Log missing: live_banknifty.log
+
+Log missing: live_nifty.log
+
+Log missing: log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+
+---
+
+Snapshot: 2026-02-19 12:23:28 IST
+
+Processes (PID | UPTIME | COMMAND)
+- Process listing unavailable: ps permission denied
+
+Logs (last 5 lines)
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+    (missing)
+
+- /Users/mac/openalgo/openalgo/live_banknifty.log
+    (missing)
+
+- /Users/mac/openalgo/openalgo/live_nifty.log
+    (missing)
+
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+    (missing)
+
+
+---
+Snapshot: 2026-02-19 13:23:37 IST
+
+Processes (strategy scripts):
+- Process listing unavailable (ps permission denied in sandbox).
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+
+Snapshot: 2026-02-19 15:23:41 IST
+
+Processes (strategy scripts):
+(process listing failed: zsh:9: operation not permitted: ps)
+
+Log: /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+(missing)
+
+Log: /Users/mac/openalgo/openalgo/live_banknifty.log
+(missing)
+
+Log: /Users/mac/openalgo/openalgo/live_nifty.log
+(missing)
+
+Log: /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+(missing)
+
+---
+Snapshot: 2026-02-19 16:23:58 IST
+
+Processes (strategy scripts):
+- Process listing unavailable (ps permission denied in sandbox).
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+
+---
+
+## Snapshot 2026-02-19 18:23:36 IST
+
+### Strategy Processes (PID / Uptime)
+- Process listing unavailable (ps not permitted in sandbox).
+
+### Logs (last 5 lines)
+
+**live_ai_hybrid.log**
+- MISSING
+
+**live_banknifty.log**
+- MISSING
+
+**live_nifty.log**
+- MISSING
+
+**log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log**
+- MISSING
+
+---
+
+Timestamp (IST): 2026-02-19 19:24:11 IST
+
+Processes (strategy scripts):
+- Process listing unavailable (ps not permitted in sandbox).
+
+live_ai_hybrid.log: missing
+
+live_banknifty.log: missing
+
+live_nifty.log: missing
+
+log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+Snapshot: 2026-02-19 20:23:56 IST
+
+Processes:
+  (process listing failed: zsh:3: operation not permitted: ps)
+
+Log (live_ai_hybrid): /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+  (missing)
+
+Log (live_banknifty): /Users/mac/openalgo/openalgo/live_banknifty.log
+  (missing)
+
+Log (live_nifty): /Users/mac/openalgo/openalgo/live_nifty.log
+  (missing)
+
+Log (AI_Hybrid_v1_RELIANCE_20260204): /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+  (missing)
+
+---
+
+Timestamp (IST): 2026-02-19 21:23:38 IST
+
+Processes:
+- ps not permitted in sandbox; unable to list strategy processes.
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log: MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log: MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+---
+
+Timestamp (IST): 2026-02-19 22:23:44 IST
+
+Strategy processes (PID, uptime):
+- Process listing unavailable (ps blocked by sandbox permissions).
+
+Log tails (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+
+---
+
+Timestamp (IST): 2026-02-19 23:23:46 IST
+
+Strategy processes (PID / uptime / command):
+- Unable to list processes: sandbox disallows `ps` (operation not permitted).
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: missing
+- live_banknifty.log: missing
+- live_nifty.log: missing
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+
+Timestamp (IST): 2026-02-20 00:24:03 IST
+
+Strategy Processes (PID, ETIME, CMD):
+32365    07:49:14 tail -n 60 -F /Users/mac/openalgo/openalgo/log/strategies/mcx_crudeoil_momentum_live_20260219_163449.log /Users/mac/openalgo/openalgo/log/strategies/mcx_vwap_silver_live_20260219_163449.log /Users/mac/openalgo/openalgo/logs/strategy_watchdog_live_20260219_163449.log
+32374    07:49:14 /opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/mac/openalgo/openalgo/scripts/strategy_watchdog.py --interval 20
+
+Log Tails (last 5 lines):
+live_ai_hybrid.log: MISSING
+live_banknifty.log: MISSING
+live_nifty.log: MISSING
+log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+---
+
+Timestamp (IST): 2026-02-20 08:16:17 IST
+
+Strategy processes (PID / uptime / command):
+- Unable to list processes: sandbox disallows `ps`.
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log: MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log: MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+---
+
+Timestamp (IST): 2026-02-20 09:15:41 IST
+
+Strategy processes (PID | uptime | command):
+- Unavailable: `ps` command not permitted in sandbox.
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: missing
+- live_banknifty.log: missing
+- live_nifty.log: missing
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+
+Timestamp (IST): 2026-02-20 10:16:08 IST
+
+Strategy processes (PID | uptime | command):
+- Unable to list processes: Command '['ps', '-axo', 'pid=,etimes=,command=']' returned non-zero exit status 1.
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log: MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log: MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+---
+Timestamp (IST): 2026-02-20 11:15:43 IST
+Strategy processes (PID, uptime, command):
+Process listing unavailable: `ps` permission denied.
+Logs:
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+---
+Timestamp (IST): 2026-02-20 12:15:52 IST
+
+Processes (PID / uptime / command):
+ps not permitted in sandbox; unable to list processes.
+
+Log: live_ai_hybrid.log
+Missing log file.
+
+Log: live_banknifty.log
+Missing log file.
+
+Log: live_nifty.log
+Missing log file.
+
+Log: log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+Missing log file.
+
+---
+Timestamp: 2026-02-20 13:15:56 IST
+
+Strategy Processes (PID | Uptime | Command):
+Process listing unavailable: zsh:3: operation not permitted: ps
+
+Log: live_ai_hybrid.log (last 5 lines)
+Missing: /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+
+Log: live_banknifty.log (last 5 lines)
+Missing: /Users/mac/openalgo/openalgo/live_banknifty.log
+
+Log: live_nifty.log (last 5 lines)
+Missing: /Users/mac/openalgo/openalgo/live_nifty.log
+
+Log: log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log (last 5 lines)
+Missing: /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+
+
+---
+Timestamp (IST): 2026-02-20 14:15:44 IST
+
+Processes:
+Process listing unavailable: zsh:10: operation not permitted: ps
+
+Log: /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+Missing log file.
+
+Log: /Users/mac/openalgo/openalgo/live_banknifty.log
+Missing log file.
+
+Log: /Users/mac/openalgo/openalgo/live_nifty.log
+Missing log file.
+
+Log: /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+Missing log file.
+
+
+---
+Timestamp (IST): 2026-02-20 14:16:40 IST
+
+Processes:
+Process listing unavailable: zsh:9: operation not permitted: ps
+
+Log: /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+Missing log file.
+
+Log: /Users/mac/openalgo/openalgo/live_banknifty.log
+Missing log file.
+
+Log: /Users/mac/openalgo/openalgo/live_nifty.log
+Missing log file.
+
+Log: /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+Missing log file.
+
+
+---
+Timestamp (IST): 2026-02-20 15:15:56 IST
+
+Processes (pid etime command):
+37973    51:29 /opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python /Users/mac/openalgo/openalgo/scripts/strategy_watchdog.py --interval 60
+48663    29:35 /opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python /Users/mac/openalgo/strategies/strategy_runner.py --segment=MCX --action=start
+60542    00:01 /opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/mac/openalgo/openalgo/strategies/scripts/ai_hybrid_reliance_20260203095647.py
+60543    00:01 /opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/mac/openalgo/openalgo/strategies/scripts/ai_hybrid_reliance.py
+60544    00:01 /opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/mac/openalgo/openalgo/strategies/scripts/supertrend_vwap_nifty.py
+60546    00:01 /opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/mac/openalgo/openalgo/strategies/scripts/stochastic_macd_momentum.py --symbol NIFTY --exchange NSE_INDEX --trade_symbol NIFTYBEES --trade_exchange NSE --port 5002
+60548    00:01 /opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/mac/openalgo/openalgo/strategies/scripts/faber_trend_following.py --symbol NIFTY --exchange NSE_INDEX --trade_symbol NIFTYBEES --trade_exchange NSE --interval 1h --port 5002
+60559    00:00 /opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python -u /Users/mac/openalgo/openalgo/strategies/scripts/time_series_momentum.py --symbol BANKNIFTY --exchange NSE_INDEX --trade_symbol BANKBEES --trade_exchange NSE --interval 1h --port 5002
+23385 06:44:59 /bin/zsh -c while true; do ts=$(date '+%Y-%m-%d %H:%M:%S %Z'); hs=$(curl -sS -m 5 http://127.0.0.1:5002/health/status 2>/dev/null | tr -d '\n'); ss=$(curl -sS -m 5 http://127.0.0.1:5002/auth/session-status 2>/dev/null | tr -d '\n'); pr=$(pgrep -fl "strategy_runner.py --segment" | wc -l | tr -d ' '); wd=$(pgrep -fl "strategy_watchdog.py" | wc -l | tr -d ' '); echo "[$ts] health=$hs session=$ss runners=$pr watchdog=$wd" >> /Users/mac/openalgo/openalgo/logs/session_monitor.log; sleep 60; done
+
+Logs (last 5 lines):
+/Users/mac/openalgo/openalgo/live_ai_hybrid.log
+<missing>
+
+/Users/mac/openalgo/openalgo/live_banknifty.log
+<missing>
+
+/Users/mac/openalgo/openalgo/live_nifty.log
+<missing>
+
+/Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+<missing>
+---
+Timestamp (IST): 2026-02-20 16:15:54 IST
+
+Processes (strategy scripts):
+- ps unavailable: zsh: operation not permitted
+
+Log tail: live_ai_hybrid.log
+- missing
+
+Log tail: live_banknifty.log
+- missing
+
+Log tail: live_nifty.log
+- missing
+
+Log tail: log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+- missing
+
+\n---\n
+## Snapshot 2026-02-20 17:15:52 IST
+
+### Processes
+Process listing unavailable: zsh:9: operation not permitted: ps
+
+### Logs (last 5 lines)
+
+#### /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+Missing log file.
+
+#### /Users/mac/openalgo/openalgo/live_banknifty.log
+Missing log file.
+
+#### /Users/mac/openalgo/openalgo/live_nifty.log
+Missing log file.
+
+#### /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+Missing log file.
+---
+Timestamp (IST): 
+
+Strategy processes (PID | ETIME | CMD):
+Process listing unavailable: zsh:15: operation not permitted: ps
+
+Logs (last 5 lines):
+== live_ai_hybrid.log ==
+Missing log: /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+
+== live_banknifty.log ==
+Missing log: /Users/mac/openalgo/openalgo/live_banknifty.log
+
+== live_nifty.log ==
+Missing log: /Users/mac/openalgo/openalgo/live_nifty.log
+
+== AI_Hybrid_v1_RELIANCE_20260204.log ==
+Missing log: /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+
+---
+Timestamp (IST): 2026-02-20 18:16:00 IST
+
+Strategy processes (PID | ETIME | CMD):
+Process listing unavailable: zsh:15: operation not permitted: ps
+
+Logs (last 5 lines):
+== live_ai_hybrid.log ==
+Missing log: /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+
+== live_banknifty.log ==
+Missing log: /Users/mac/openalgo/openalgo/live_banknifty.log
+
+== live_nifty.log ==
+Missing log: /Users/mac/openalgo/openalgo/live_nifty.log
+
+== AI_Hybrid_v1_RELIANCE_20260204.log ==
+Missing log: /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+
+
+---
+
+Timestamp (IST): 2026-02-20 19:16:05 IST
+
+Processes (PID ETIME CMD):
+No matching strategy processes found.
+
+Log tails (last 5 lines):
+[live_ai_hybrid] /Users/mac/openalgo/openalgo/live_ai_hybrid.log (missing)
+
+[live_banknifty] /Users/mac/openalgo/openalgo/live_banknifty.log (missing)
+
+[live_nifty] /Users/mac/openalgo/openalgo/live_nifty.log (missing)
+
+[AI_Hybrid_v1_RELIANCE_20260204] /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log (missing)
+
+---
+Timestamp (IST): 2026-02-20 22:16:01 IST
+
+Processes:
+- ps not permitted in sandbox; unable to list PIDs/uptimes
+
+Log: /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+Missing log: /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+
+Log: /Users/mac/openalgo/openalgo/live_banknifty.log
+Missing log: /Users/mac/openalgo/openalgo/live_banknifty.log
+
+Log: /Users/mac/openalgo/openalgo/live_nifty.log
+Missing log: /Users/mac/openalgo/openalgo/live_nifty.log
+
+Log: /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+Missing log: /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+
+
+---
+
+Timestamp (IST): 2026-02-20 23:15:46 IST
+
+Processes (PID | Uptime | Command):
+- Unable to list processes: ps permission denied in sandbox.
+
+Log tails (last 5 lines):
+- live_ai_hybrid.log: missing
+- live_banknifty.log: missing
+- live_nifty.log: missing
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+
+Timestamp (IST): 2026-02-21 00:15:50 IST
+
+Processes:
+- ps unavailable in sandbox: operation not permitted
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log: missing
+- /Users/mac/openalgo/openalgo/live_nifty.log: missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+---
+Timestamp: 2026-02-21 01:15:54 IST
+
+Processes (PID, uptime, command):
+Process listing unavailable: zsh:9: operation not permitted: ps
+
+Log tail: /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+Missing log file.
+
+Log tail: /Users/mac/openalgo/openalgo/live_banknifty.log
+Missing log file.
+
+Log tail: /Users/mac/openalgo/openalgo/live_nifty.log
+Missing log file.
+
+Log tail: /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+Missing log file.
+
+
+---
+Timestamp (IST): 2026-02-21 02:15:52 IST
+
+Processes (PID, uptime, command):
+- Process listing unavailable: zsh:1: operation not permitted: ps
+
+Log tail: /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+Missing log file.
+
+Log tail: /Users/mac/openalgo/openalgo/live_banknifty.log
+Missing log file.
+
+Log tail: /Users/mac/openalgo/openalgo/live_nifty.log
+Missing log file.
+
+Log tail: /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+Missing log file.
+---
+Timestamp (IST): 2026-02-21 03:18:00 IST
+
+Processes (PID, uptime, command):
+- Process listing unavailable: zsh:1: operation not permitted: ps
+
+Log tail: /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+Missing log file.
+
+Log tail: /Users/mac/openalgo/openalgo/live_banknifty.log
+Missing log file.
+
+Log tail: /Users/mac/openalgo/openalgo/live_nifty.log
+Missing log file.
+
+Log tail: /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+Missing log file.
+
+---
+Timestamp (IST): 2026-02-21 04:16:11 IST
+
+Processes:
+Process listing unavailable: zsh:9: operation not permitted: ps
+
+Log (live_ai_hybrid.log):
+Missing log: /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+
+Log (live_banknifty.log):
+Missing log: /Users/mac/openalgo/openalgo/live_banknifty.log
+
+Log (live_nifty.log):
+Missing log: /Users/mac/openalgo/openalgo/live_nifty.log
+
+Log (log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log):
+Missing log: /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+
+
+---
+
+Timestamp (IST): 2026-02-21 06:16:36 IST
+
+Strategy Processes (PID ETIME COMMAND):
+37973 15:52:10 /opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python /Users/mac/openalgo/openalgo/scripts/strategy_watchdog.py --interval 60
+23385 21:45:40 /bin/zsh -c while true; do ts=$(date '+%Y-%m-%d %H:%M:%S %Z'); hs=$(curl -sS -m 5 http://127.0.0.1:5002/health/status 2>/dev/null | tr -d '\n'); ss=$(curl -sS -m 5 http://127.0.0.1:5002/auth/session-status 2>/dev/null | tr -d '\n'); pr=$(pgrep -fl "strategy_runner.py --segment" | wc -l | tr -d ' '); wd=$(pgrep -fl "strategy_watchdog.py" | wc -l | tr -d ' '); echo "[$ts] health=$hs session=$ss runners=$pr watchdog=$wd" >> /Users/mac/openalgo/openalgo/logs/session_monitor.log; sleep 60; done
+
+Logs (last 5 lines):
+
+/Users/mac/openalgo/openalgo/live_ai_hybrid.log:
+(missing)
+
+/Users/mac/openalgo/openalgo/live_banknifty.log:
+(missing)
+
+/Users/mac/openalgo/openalgo/live_nifty.log:
+(missing)
+
+/Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log:
+(missing)
+---
+Timestamp: 2026-02-21 07:16:29 IST
+
+Processes (PID | ELAPSED | CMD):
+37973 16:52:02 /opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python /Users/mac/openalgo/openalgo/scripts/strategy_watchdog.py --interval 60
+23385 22:45:32 /bin/zsh -c while true; do ts=$(date '+%Y-%m-%d %H:%M:%S %Z'); hs=$(curl -sS -m 5 http://127.0.0.1:5002/health/status 2>/dev/null | tr -d '\n'); ss=$(curl -sS -m 5 http://127.0.0.1:5002/auth/session-status 2>/dev/null | tr -d '\n'); pr=$(pgrep -fl "strategy_runner.py --segment" | wc -l | tr -d ' '); wd=$(pgrep -fl "strategy_watchdog.py" | wc -l | tr -d ' '); echo "[$ts] health=$hs session=$ss runners=$pr watchdog=$wd" >> /Users/mac/openalgo/openalgo/logs/session_monitor.log; sleep 60; done
+
+Log: /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+(missing)
+Log: /Users/mac/openalgo/openalgo/live_banknifty.log
+(missing)
+Log: /Users/mac/openalgo/openalgo/live_nifty.log
+(missing)
+Log: /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+(missing)
+
+---
+
+Timestamp (IST): 2026-02-21 08:16:30 IST
+
+Processes (strategy scripts):
+- Process listing unavailable: ps not permitted in this environment.
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: missing
+- live_banknifty.log: missing
+- live_nifty.log: missing
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+
+---
+
+Timestamp (IST): 2026-02-21 09:16:08 IST
+
+Processes (strategy scripts):
+- Process listing unavailable: ps not permitted in this environment.
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: missing
+- live_banknifty.log: missing
+- live_nifty.log: missing
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: missing
+---
+Timestamp (IST): 2026-02-21 12:16:30 IST
+
+Strategy processes (PID | Uptime | Command):
+- Unavailable: unable to run 'ps' (operation not permitted)
+
+Logs (last 5 lines):
+- live_ai_hybrid.log: MISSING
+- live_banknifty.log: MISSING
+- live_nifty.log: MISSING
+- log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+
+---
+
+Timestamp (IST): 2026-02-21 13:16:54 IST
+
+Strategy processes (PID / uptime / command):
+- Unavailable: `ps` not permitted in sandbox (cannot list running PIDs/uptimes).
+
+Logs (last 5 lines):
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log: MISSING
+- /Users/mac/openalgo/openalgo/live_banknifty.log: MISSING
+- /Users/mac/openalgo/openalgo/live_nifty.log: MISSING
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log: MISSING
+
+---
+
+## Snapshot - 2026-02-25 23:29:12 IST
+
+**Strategy Processes (PID, Uptime)**
+- Unavailable: `ps` not permitted in sandbox; unable to list running strategy scripts.
+
+**Logs (last 5 lines)**
+- /Users/mac/openalgo/openalgo/live_ai_hybrid.log
+  - Missing
+- /Users/mac/openalgo/openalgo/live_banknifty.log
+  - Missing
+- /Users/mac/openalgo/openalgo/live_nifty.log
+  - Missing
+- /Users/mac/openalgo/openalgo/log/strategies/AI_Hybrid_v1_RELIANCE_20260204.log
+  - Missing
